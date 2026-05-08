@@ -1,0 +1,2089 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Panel Stack — @magic-spells</title>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Outfit:wght@200;300;400;500;600&display=swap"
+			rel="stylesheet" />
+		<link rel="stylesheet" href="../dist/panel-stack.min.css" />
+
+		<style>
+			:root {
+				--bg-deep: #07060b;
+				--bg-card: #0f0e14;
+				--bg-card-hover: #15141c;
+				--bg-frame: #16141e;
+				--bg-row: #1a1824;
+				--bg-row-hover: #221f2e;
+				--border: #1e1c28;
+				--border-accent: #2a2636;
+				--gold: #c9a84c;
+				--gold-dim: #8a7233;
+				--gold-glow: rgba(201, 168, 76, 0.12);
+				--cream: #e8e0cc;
+				--cream-dim: #9a9284;
+				--text: #e6e2d8;
+				--text-dim: #6b665c;
+				--font-display: 'Cormorant Garamond', Georgia, serif;
+				--font-body: 'Outfit', system-ui, sans-serif;
+			}
+
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			html {
+				scroll-behavior: smooth;
+				background: var(--bg-deep);
+			}
+
+			body {
+				font-family: var(--font-body);
+				font-weight: 300;
+				color: var(--text);
+				background: var(--bg-deep);
+				overflow-x: hidden;
+				-webkit-font-smoothing: antialiased;
+			}
+
+			body::before {
+				content: '';
+				position: fixed;
+				inset: 0;
+				z-index: 9999;
+				pointer-events: none;
+				opacity: 0.025;
+				background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+				background-repeat: repeat;
+				background-size: 256px;
+			}
+
+			/* ---- Hero ---- */
+			.hero {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 5rem 2rem 3rem;
+				text-align: center;
+			}
+
+			.hero::before {
+				content: '';
+				position: absolute;
+				top: -40%;
+				left: 50%;
+				transform: translateX(-50%);
+				width: 900px;
+				height: 900px;
+				background: radial-gradient(ellipse, var(--gold-glow) 0%, transparent 70%);
+				pointer-events: none;
+			}
+
+			.hero-badge {
+				font-family: var(--font-body);
+				font-weight: 400;
+				font-size: 0.7rem;
+				letter-spacing: 0.25em;
+				text-transform: uppercase;
+				color: var(--gold);
+				border: 1px solid var(--border-accent);
+				padding: 0.4em 1.4em;
+				border-radius: 100px;
+				margin-bottom: 2.5rem;
+				text-decoration: none;
+				transition:
+					border-color 0.3s ease,
+					color 0.3s ease;
+			}
+
+			.hero-badge:hover {
+				border-color: var(--gold-dim);
+				color: var(--cream);
+			}
+
+			.hero h1 {
+				font-family: var(--font-display);
+				font-weight: 300;
+				font-size: clamp(3rem, 9vw, 7rem);
+				line-height: 1.05;
+				color: var(--cream);
+				letter-spacing: -0.02em;
+				margin-bottom: 1.75rem;
+				max-width: 14ch;
+			}
+
+			.hero h1 em {
+				font-style: italic;
+				color: var(--gold);
+			}
+
+			.hero-tagline {
+				max-width: 540px;
+				font-size: 1.05rem;
+				line-height: 1.7;
+				color: var(--text);
+			}
+
+			.hero-line {
+				width: 1px;
+				height: 80px;
+				background: linear-gradient(to bottom, var(--gold-dim), transparent);
+				margin-top: 3rem;
+			}
+
+			/* ---- Install banner ---- */
+			.install-banner {
+				display: flex;
+				justify-content: center;
+				gap: 2.5rem;
+				flex-wrap: wrap;
+				margin: 0 auto 1.25rem;
+				max-width: 680px;
+				padding: 0 1.5rem;
+			}
+
+			.install-specs {
+				display: flex;
+				justify-content: center;
+				gap: 2.5rem;
+				flex-wrap: wrap;
+				margin: 0 auto 3rem;
+				max-width: 680px;
+				padding: 0 1.5rem;
+			}
+
+			.install-item {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 0.4rem;
+			}
+
+			.install-label {
+				font-family: var(--font-body);
+				font-size: 0.65rem;
+				font-weight: 400;
+				letter-spacing: 0.18em;
+				text-transform: uppercase;
+				color: var(--text-dim);
+			}
+
+			.install-value {
+				font-family: 'Courier New', monospace;
+				font-size: 0.88rem;
+				color: var(--cream);
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				padding: 0.5em 1.2em;
+				user-select: all;
+				cursor: copy;
+				transition: border-color 0.3s ease;
+			}
+
+			.install-value:hover {
+				border-color: var(--gold-dim);
+			}
+
+			.install-size {
+				font-family: 'Courier New', monospace;
+				font-size: 0.88rem;
+				color: var(--gold);
+				padding: 0.5em 0;
+			}
+
+			.quick-start {
+				max-width: 720px;
+				margin: 0 auto 4rem;
+				padding: 0 1.5rem;
+			}
+
+			/* ---- Sections ---- */
+			.demos {
+				max-width: 1100px;
+				margin: 0 auto;
+				padding: 1rem 1.5rem 8rem;
+				display: flex;
+				flex-direction: column;
+				gap: 6rem;
+			}
+
+			.demo-section {
+				position: relative;
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: 16px;
+				padding: 3rem 2.5rem;
+			}
+
+			.demo-section h2 {
+				font-family: var(--font-display);
+				font-weight: 400;
+				font-size: clamp(2rem, 4vw, 3rem);
+				line-height: 1.1;
+				color: var(--cream);
+				letter-spacing: -0.01em;
+				margin-bottom: 1rem;
+			}
+
+			.demo-section h2 em {
+				font-style: italic;
+				color: var(--gold);
+			}
+
+			.demo-desc {
+				font-size: 1rem;
+				color: var(--text);
+				line-height: 1.7;
+				margin-bottom: 2rem;
+				max-width: 600px;
+			}
+
+			.demo-desc code {
+				font-family: 'Courier New', monospace;
+				font-size: 0.85em;
+				color: var(--gold);
+				background: rgba(255, 255, 255, 0.04);
+				padding: 0.1em 0.4em;
+				border-radius: 4px;
+			}
+
+			.demo-desc strong {
+				color: var(--cream);
+				font-weight: 500;
+			}
+
+			.demo-stage {
+				background: linear-gradient(
+					135deg,
+					rgba(255, 255, 255, 0.01) 0%,
+					rgba(255, 255, 255, 0.03) 100%
+				);
+				border: 1px solid var(--border);
+				border-radius: 12px;
+				padding: 2.5rem;
+				margin-bottom: 1.75rem;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				gap: 2.5rem;
+				flex-wrap: wrap;
+			}
+
+			/* ---- The "device frame" — every panel-stack lives in one of these ---- */
+			.ps-frame {
+				background: var(--bg-frame);
+				border: 1px solid var(--border-accent);
+				border-radius: 22px;
+				box-shadow:
+					0 30px 60px -20px rgba(0, 0, 0, 0.6),
+					inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+				overflow: hidden;
+				flex-shrink: 0;
+			}
+
+			.ps-frame--tall {
+				width: 320px;
+				height: 540px;
+			}
+
+			.ps-frame--wide {
+				width: 480px;
+				height: 380px;
+			}
+
+			@media (max-width: 560px) {
+				.ps-frame--tall,
+				.ps-frame--wide {
+					width: min(100%, 320px);
+				}
+				.ps-frame--wide {
+					height: 480px;
+				}
+			}
+
+			/* For effect="stack", the panel-stack itself shows around the
+			   shrunken previous card — give it a darker bg so the card
+			   reads as sitting on top of a deeper surface. */
+			panel-stack[effect='stack'] {
+				background: var(--bg-deep);
+			}
+
+			/* ---- Panel chrome ---- */
+			.ps-panel {
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				height: 100%;
+				background: var(--bg-frame);
+			}
+
+			.ps-panel__header {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				height: 52px;
+				padding: 0 1rem;
+				border-bottom: 1px solid var(--border);
+				flex-shrink: 0;
+			}
+
+			.ps-panel__back,
+			.ps-panel__close {
+				appearance: none;
+				background: transparent;
+				border: none;
+				color: var(--cream);
+				cursor: pointer;
+				padding: 0.4rem;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 6px;
+				transition: background 0.2s ease, color 0.2s ease;
+			}
+
+			.ps-panel__back:hover,
+			.ps-panel__close:hover {
+				background: var(--bg-row-hover);
+				color: var(--gold);
+			}
+
+			.ps-panel__back svg,
+			.ps-panel__close svg {
+				width: 18px;
+				height: 18px;
+			}
+
+			.ps-panel__title {
+				flex: 1;
+				font-family: var(--font-display);
+				font-size: 1.15rem;
+				font-weight: 500;
+				color: var(--cream);
+				text-align: center;
+				letter-spacing: 0.005em;
+			}
+
+			.ps-panel__title--start {
+				text-align: left;
+				padding-left: 0.4rem;
+			}
+
+			.ps-panel__header-spacer {
+				width: 26px;
+				flex-shrink: 0;
+			}
+
+			.ps-panel__body {
+				flex: 1;
+				overflow-y: auto;
+				padding: 0.5rem 0;
+			}
+
+			/* ---- Rows ---- */
+			.ps-row {
+				appearance: none;
+				background: transparent;
+				border: none;
+				width: 100%;
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				padding: 0.85rem 1rem;
+				font-family: var(--font-body);
+				font-size: 0.95rem;
+				color: var(--cream);
+				text-align: left;
+				cursor: pointer;
+				text-decoration: none;
+				transition: background 0.2s ease;
+			}
+
+			.ps-row:hover {
+				background: var(--bg-row);
+			}
+
+			.ps-row__icon {
+				width: 28px;
+				height: 28px;
+				border-radius: 6px;
+				background: var(--bg-row);
+				color: var(--gold);
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+				font-size: 0.75rem;
+			}
+
+			.ps-row__icon svg {
+				width: 14px;
+				height: 14px;
+			}
+
+			.ps-row__label {
+				flex: 1;
+				min-width: 0;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.ps-row__value {
+				font-size: 0.85rem;
+				color: var(--text-dim);
+			}
+
+			.ps-row__chevron {
+				width: 16px;
+				height: 16px;
+				color: var(--text-dim);
+				flex-shrink: 0;
+			}
+
+			.ps-row + .ps-row {
+				border-top: 1px solid rgba(255, 255, 255, 0.025);
+			}
+
+			.ps-section-label {
+				font-family: var(--font-body);
+				font-size: 0.62rem;
+				font-weight: 500;
+				letter-spacing: 0.18em;
+				text-transform: uppercase;
+				color: var(--text-dim);
+				padding: 1.25rem 1rem 0.5rem;
+			}
+
+			/* ---- Toggle (decorative) ---- */
+			.ps-toggle {
+				width: 34px;
+				height: 20px;
+				background: var(--bg-row-hover);
+				border-radius: 12px;
+				position: relative;
+				flex-shrink: 0;
+				transition: background 0.25s ease;
+			}
+
+			.ps-toggle::after {
+				content: '';
+				position: absolute;
+				top: 2px;
+				left: 2px;
+				width: 16px;
+				height: 16px;
+				border-radius: 50%;
+				background: var(--cream);
+				transition: transform 0.25s ease;
+			}
+
+			.ps-toggle--on {
+				background: var(--gold-dim);
+			}
+
+			.ps-toggle--on::after {
+				transform: translateX(14px);
+				background: var(--cream);
+			}
+
+			/* ---- Wizard panel ---- */
+			.ps-wizard {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				padding: 1.5rem 1.75rem;
+				background: var(--bg-frame);
+			}
+
+			.ps-wizard__step {
+				font-family: var(--font-body);
+				font-size: 0.6rem;
+				font-weight: 500;
+				letter-spacing: 0.22em;
+				text-transform: uppercase;
+				color: var(--gold);
+				margin-bottom: 0.5rem;
+			}
+
+			.ps-wizard__title {
+				font-family: var(--font-display);
+				font-size: 1.6rem;
+				font-weight: 500;
+				color: var(--cream);
+				margin-bottom: 0.5rem;
+				line-height: 1.2;
+			}
+
+			.ps-wizard__hint {
+				font-size: 0.85rem;
+				color: var(--text);
+				line-height: 1.55;
+				margin-bottom: 1.5rem;
+			}
+
+			.ps-wizard__field {
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+				margin-bottom: 1rem;
+			}
+
+			.ps-wizard__label {
+				font-size: 0.7rem;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				color: var(--text-dim);
+			}
+
+			.ps-wizard__input {
+				background: var(--bg-row);
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				padding: 0.6rem 0.75rem;
+				font: inherit;
+				color: var(--cream);
+				outline: none;
+				transition: border-color 0.2s ease;
+			}
+
+			.ps-wizard__input:focus {
+				border-color: var(--gold-dim);
+			}
+
+			.ps-wizard__option {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				padding: 0.6rem 0;
+				font-size: 0.9rem;
+				color: var(--cream);
+				cursor: pointer;
+			}
+
+			.ps-wizard__option input {
+				accent-color: var(--gold);
+			}
+
+			.ps-wizard__actions {
+				margin-top: auto;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 0.5rem;
+				padding-top: 1rem;
+			}
+
+			.ps-wizard__back {
+				appearance: none;
+				background: transparent;
+				border: none;
+				color: var(--text-dim);
+				font: inherit;
+				font-size: 0.8rem;
+				letter-spacing: 0.06em;
+				cursor: pointer;
+				padding: 0.5rem 0.25rem;
+				transition: color 0.2s ease;
+			}
+
+			.ps-wizard__back:hover {
+				color: var(--cream);
+			}
+
+			.ps-wizard__primary {
+				appearance: none;
+				background: var(--gold);
+				border: none;
+				color: var(--bg-deep);
+				font: inherit;
+				font-size: 0.78rem;
+				font-weight: 500;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+				padding: 0.7em 1.4em;
+				border-radius: 100px;
+				cursor: pointer;
+				transition: transform 0.15s ease, box-shadow 0.2s ease;
+			}
+
+			.ps-wizard__primary:hover {
+				box-shadow: 0 0 22px rgba(201, 168, 76, 0.35);
+			}
+
+			.ps-wizard__primary:active {
+				transform: translateY(1px);
+			}
+
+			.ps-wizard__confirm {
+				display: flex;
+				flex-direction: column;
+				gap: 0.6rem;
+				font-size: 0.92rem;
+				color: var(--text);
+				line-height: 1.6;
+				margin-bottom: 1rem;
+			}
+
+			.ps-wizard__confirm strong {
+				color: var(--cream);
+				font-weight: 500;
+			}
+
+			/* ---- Controls ---- */
+			.controls {
+				display: flex;
+				gap: 0.75rem;
+				flex-wrap: wrap;
+				align-items: center;
+			}
+
+			.control-row {
+				display: flex;
+				flex-direction: column;
+				gap: 0.4rem;
+			}
+
+			.control-buttons {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+			}
+
+			.control-buttons .btn {
+				padding: 0.55em 1.1em;
+				font-size: 0.65rem;
+			}
+
+			.btn {
+				font-family: var(--font-body);
+				font-weight: 400;
+				font-size: 0.7rem;
+				letter-spacing: 0.18em;
+				text-transform: uppercase;
+				color: var(--cream);
+				background: transparent;
+				border: 1px solid var(--border-accent);
+				padding: 0.7em 1.6em;
+				border-radius: 100px;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.btn:hover {
+				border-color: var(--gold-dim);
+				color: var(--gold);
+				box-shadow: 0 0 20px rgba(201, 168, 76, 0.1);
+			}
+
+			.btn:active {
+				transform: translateY(1px);
+			}
+
+			.btn[data-active] {
+				border-color: var(--gold);
+				color: var(--gold);
+				background: var(--gold-glow);
+			}
+
+			/* ---- Slider playground ---- */
+			.playground-grid {
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 1.25rem 2rem;
+				flex: 1;
+				min-width: 240px;
+				max-width: 320px;
+			}
+
+			@media (min-width: 700px) {
+				.demo-stage--playground {
+					align-items: stretch;
+				}
+			}
+
+			.slider-row {
+				display: flex;
+				flex-direction: column;
+				gap: 0.4rem;
+			}
+
+			.slider-head {
+				display: flex;
+				align-items: baseline;
+				justify-content: space-between;
+				gap: 0.5rem;
+			}
+
+			.slider-label {
+				font-family: var(--font-body);
+				font-size: 0.65rem;
+				letter-spacing: 0.18em;
+				text-transform: uppercase;
+				color: var(--text-dim);
+			}
+
+			.slider-value {
+				font-family: 'Courier New', monospace;
+				font-size: 0.78rem;
+				color: var(--gold);
+			}
+
+			input[type='range'] {
+				-webkit-appearance: none;
+				appearance: none;
+				width: 100%;
+				height: 2px;
+				background: var(--border-accent);
+				border-radius: 1px;
+				outline: none;
+				cursor: pointer;
+			}
+
+			input[type='range']::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				appearance: none;
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--gold);
+				border: none;
+				box-shadow: 0 0 16px rgba(201, 168, 76, 0.4);
+				transition: box-shadow 0.2s ease;
+			}
+
+			input[type='range']::-webkit-slider-thumb:hover {
+				box-shadow: 0 0 24px rgba(201, 168, 76, 0.6);
+			}
+
+			input[type='range']::-moz-range-thumb {
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--gold);
+				border: none;
+				box-shadow: 0 0 16px rgba(201, 168, 76, 0.4);
+			}
+
+			/* ---- Code block ---- */
+			.code-block {
+				background: var(--bg-deep);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 1.25rem 1.5rem;
+				overflow-x: auto;
+				margin-top: 1.75rem;
+				font-family: 'Courier New', monospace;
+				font-size: 0.78rem;
+				line-height: 1.85;
+				color: var(--text);
+				white-space: pre;
+				-webkit-overflow-scrolling: touch;
+			}
+
+			.code-block-wide {
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: 12px;
+				padding: 1.75rem 2rem;
+				font-family: 'Courier New', monospace;
+				font-size: 0.82rem;
+				line-height: 1.85;
+				color: var(--text);
+				white-space: pre;
+				overflow-x: auto;
+				margin: 0;
+			}
+
+			.hl-tag { color: var(--gold); }
+			.hl-attr { color: #a59ad8; }
+			.hl-val { color: #d68a72; }
+			.hl-cm { color: var(--text-dim); font-style: italic; }
+
+			/* ---- Reference tables ---- */
+			.ref-heading {
+				font-family: var(--font-body);
+				font-weight: 400;
+				font-size: 0.7rem;
+				letter-spacing: 0.22em;
+				text-transform: uppercase;
+				color: var(--gold);
+				margin: 2.25rem 0 1rem;
+			}
+
+			.ref-heading:first-of-type {
+				margin-top: 0.5rem;
+			}
+
+			.ref-table {
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				overflow: hidden;
+				font-size: 0.85rem;
+			}
+
+			.ref-row {
+				display: grid;
+				grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 2fr);
+				gap: 1rem;
+				padding: 0.75rem 1.25rem;
+				border-top: 1px solid var(--border);
+				color: var(--text);
+				line-height: 1.55;
+				align-items: baseline;
+			}
+
+			.ref-row:first-child {
+				border-top: none;
+			}
+
+			.ref-row.ref-head {
+				background: rgba(255, 255, 255, 0.025);
+				font-family: var(--font-body);
+				font-size: 0.65rem;
+				font-weight: 400;
+				letter-spacing: 0.18em;
+				text-transform: uppercase;
+				color: var(--cream-dim);
+			}
+
+			.ref-row code {
+				font-family: 'Courier New', monospace;
+				font-size: 0.78rem;
+				color: var(--cream);
+				background: rgba(255, 255, 255, 0.04);
+				padding: 0.12em 0.45em;
+				border-radius: 4px;
+				word-break: break-word;
+			}
+
+			@media (max-width: 640px) {
+				.ref-row {
+					grid-template-columns: 1fr;
+					gap: 0.35rem;
+				}
+				.ref-row.ref-head {
+					display: none;
+				}
+			}
+
+			/* ---- Console-style event log ---- */
+			.event-log {
+				background: var(--bg-deep);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 1rem 1.25rem;
+				font-family: 'Courier New', monospace;
+				font-size: 0.78rem;
+				line-height: 1.6;
+				color: var(--text);
+				min-height: 120px;
+				max-height: 220px;
+				overflow-y: auto;
+				flex: 1;
+				min-width: 240px;
+			}
+
+			.event-log__line {
+				display: block;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			.event-log__line .hl-tag { color: var(--gold); }
+			.event-log__line .hl-val { color: #d68a72; }
+			.event-log__line .hl-cm { color: var(--text-dim); }
+
+			.event-log__empty {
+				color: var(--text-dim);
+				font-style: italic;
+			}
+
+			/* ---- Footer ---- */
+			footer {
+				max-width: 1100px;
+				margin: 0 auto;
+				padding: 2rem 1.5rem 4rem;
+				border-top: 1px solid var(--border);
+				text-align: center;
+			}
+
+			footer p {
+				font-family: 'Courier New', monospace;
+				font-size: 0.72rem;
+				color: var(--text-dim);
+				letter-spacing: 0.04em;
+			}
+
+			@media (max-width: 640px) {
+				.demo-section {
+					padding: 2rem 1.5rem;
+				}
+				.demo-stage {
+					padding: 1.5rem 1rem;
+				}
+				.demos {
+					gap: 4rem;
+				}
+				.install-banner {
+					gap: 1.5rem;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- ======== HERO ======== -->
+		<header class="hero">
+			<a
+				class="hero-badge"
+				href="https://github.com/magic-spells/panel-stack"
+				target="_blank"
+				rel="noopener"
+				>@magic-spells/panel-stack</a
+			>
+			<h1>Navigation that <em>flows</em>.</h1>
+			<p class="hero-tagline">
+				A nested-panel stack web component. Push, pop, drift gently between levels —
+				with motion blur, depth, and a tiny API.
+			</p>
+			<div class="hero-line"></div>
+		</header>
+
+		<!-- ======== INSTALL ======== -->
+		<div class="install-banner">
+			<div class="install-item">
+				<span class="install-label">Install</span>
+				<code class="install-value">npm i @magic-spells/panel-stack</code>
+			</div>
+		</div>
+		<div class="install-specs">
+			<div class="install-item">
+				<span class="install-label">JS (gzip)</span>
+				<span class="install-size">1.25 KB</span>
+			</div>
+			<div class="install-item">
+				<span class="install-label">CSS (gzip)</span>
+				<span class="install-size">0.78 KB</span>
+			</div>
+			<div class="install-item">
+				<span class="install-label">Dependencies</span>
+				<span class="install-size">0</span>
+			</div>
+		</div>
+
+		<!-- ======== QUICK START ======== -->
+		<div class="quick-start">
+			<div class="code-block-wide"><span class="hl-cm">// install</span>
+npm i @magic-spells/panel-stack
+
+<span class="hl-cm">// import (auto-registers &lt;panel-stack&gt; and &lt;stack-panel&gt;)</span>
+<span class="hl-tag">import</span> <span class="hl-val">'@magic-spells/panel-stack'</span>;
+
+<span class="hl-cm">// markup</span>
+&lt;<span class="hl-tag">panel-stack</span> <span class="hl-attr">initial</span>=<span class="hl-val">"root"</span>&gt;
+  &lt;<span class="hl-tag">stack-panel</span> <span class="hl-attr">handle</span>=<span class="hl-val">"root"</span>&gt;
+    &lt;<span class="hl-tag">button</span> <span class="hl-attr">data-action-stack-push</span> <span class="hl-attr">target</span>=<span class="hl-val">"shop"</span>&gt;Shop&lt;/<span class="hl-tag">button</span>&gt;
+  &lt;/<span class="hl-tag">stack-panel</span>&gt;
+  &lt;<span class="hl-tag">stack-panel</span> <span class="hl-attr">handle</span>=<span class="hl-val">"shop"</span>&gt;
+    &lt;<span class="hl-tag">button</span> <span class="hl-attr">data-action-stack-pop</span>&gt;Back&lt;/<span class="hl-tag">button</span>&gt;
+  &lt;/<span class="hl-tag">stack-panel</span>&gt;
+&lt;/<span class="hl-tag">panel-stack</span>&gt;</div>
+		</div>
+
+		<!-- ======== DEMOS ======== -->
+		<main class="demos">
+			<!-- ---- 01 Mobile menu ---- -->
+			<section class="demo-section" id="demo-mobile-menu">
+				<h2>The classic — a <em>mobile menu</em>.</h2>
+				<p class="demo-desc">
+					Tap a row with a chevron to drill in. The current panel slides off, the next slides in,
+					and the inactive ones blur slightly into the background. Hit the back arrow to
+					unwind one level at a time.
+				</p>
+				<div class="demo-stage">
+					<div class="ps-frame ps-frame--tall">
+						<panel-stack initial="menu-root" id="menu-stack">
+							<stack-panel handle="menu-root">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__close" type="button" aria-label="Close">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+										</button>
+										<span class="ps-panel__title ps-panel__title--start">Menu</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="menu-shop" data-stack-focus>
+											<span class="ps-row__label">Shop</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="menu-collections">
+											<span class="ps-row__label">Collections</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<a class="ps-row" href="#about-link" onclick="event.preventDefault()">
+											<span class="ps-row__label">About</span>
+										</a>
+										<a class="ps-row" href="#journal-link" onclick="event.preventDefault()">
+											<span class="ps-row__label">Journal</span>
+										</a>
+										<div class="ps-section-label">Account</div>
+										<a class="ps-row" href="#account-link" onclick="event.preventDefault()">
+											<span class="ps-row__label">Sign in</span>
+										</a>
+										<a class="ps-row" href="#help-link" onclick="event.preventDefault()">
+											<span class="ps-row__label">Help &amp; support</span>
+										</a>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="menu-shop">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Shop</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="menu-shop-women">
+											<span class="ps-row__label">Women</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="menu-shop-men">
+											<span class="ps-row__label">Men</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<a class="ps-row" href="#new" onclick="event.preventDefault()">
+											<span class="ps-row__label">New arrivals</span>
+										</a>
+										<a class="ps-row" href="#sale" onclick="event.preventDefault()">
+											<span class="ps-row__label">Sale</span>
+										</a>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="menu-shop-women">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Women</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="menu-shop-women-dresses">
+											<span class="ps-row__label">Dresses</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<a class="ps-row" href="#tops" onclick="event.preventDefault()">
+											<span class="ps-row__label">Tops</span>
+										</a>
+										<a class="ps-row" href="#bottoms" onclick="event.preventDefault()">
+											<span class="ps-row__label">Bottoms</span>
+										</a>
+										<a class="ps-row" href="#outerwear" onclick="event.preventDefault()">
+											<span class="ps-row__label">Outerwear</span>
+										</a>
+										<a class="ps-row" href="#shoes" onclick="event.preventDefault()">
+											<span class="ps-row__label">Shoes</span>
+										</a>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="menu-shop-men">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Men</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<a class="ps-row" href="#shirts" onclick="event.preventDefault()">
+											<span class="ps-row__label">Shirts</span>
+										</a>
+										<a class="ps-row" href="#trousers" onclick="event.preventDefault()">
+											<span class="ps-row__label">Trousers</span>
+										</a>
+										<a class="ps-row" href="#jackets" onclick="event.preventDefault()">
+											<span class="ps-row__label">Jackets</span>
+										</a>
+										<a class="ps-row" href="#footwear" onclick="event.preventDefault()">
+											<span class="ps-row__label">Footwear</span>
+										</a>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="menu-shop-women-dresses">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Dresses</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<a class="ps-row" href="#midi" onclick="event.preventDefault()">
+											<span class="ps-row__label">Midi</span>
+										</a>
+										<a class="ps-row" href="#maxi" onclick="event.preventDefault()">
+											<span class="ps-row__label">Maxi</span>
+										</a>
+										<a class="ps-row" href="#mini" onclick="event.preventDefault()">
+											<span class="ps-row__label">Mini</span>
+										</a>
+										<a class="ps-row" href="#evening" onclick="event.preventDefault()">
+											<span class="ps-row__label">Evening</span>
+										</a>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="menu-collections">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Collections</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<a class="ps-row" href="#summer" onclick="event.preventDefault()">
+											<span class="ps-row__label">Summer ’26</span>
+										</a>
+										<a class="ps-row" href="#archive" onclick="event.preventDefault()">
+											<span class="ps-row__label">Archive</span>
+										</a>
+										<a class="ps-row" href="#capsule" onclick="event.preventDefault()">
+											<span class="ps-row__label">Capsule</span>
+										</a>
+									</div>
+								</div>
+							</stack-panel>
+						</panel-stack>
+					</div>
+					<div class="controls" style="flex-direction: column; align-items: flex-start;">
+						<button class="btn" id="menu-reset">Reset to root</button>
+						<button class="btn" id="menu-deeplink">Jump to dresses</button>
+					</div>
+				</div>
+				<div class="code-block">&lt;<span class="hl-tag">panel-stack</span> <span class="hl-attr">initial</span>=<span class="hl-val">"menu-root"</span>&gt;
+  &lt;<span class="hl-tag">stack-panel</span> <span class="hl-attr">handle</span>=<span class="hl-val">"menu-root"</span>&gt;
+    &lt;<span class="hl-tag">button</span> <span class="hl-attr">data-action-stack-push</span> <span class="hl-attr">target</span>=<span class="hl-val">"menu-shop"</span>&gt;Shop&lt;/<span class="hl-tag">button</span>&gt;
+  &lt;/<span class="hl-tag">stack-panel</span>&gt;
+  &lt;<span class="hl-tag">stack-panel</span> <span class="hl-attr">handle</span>=<span class="hl-val">"menu-shop"</span>&gt;
+    &lt;<span class="hl-tag">button</span> <span class="hl-attr">data-action-stack-pop</span>&gt;Back&lt;/<span class="hl-tag">button</span>&gt;
+  &lt;/<span class="hl-tag">stack-panel</span>&gt;
+&lt;/<span class="hl-tag">panel-stack</span>&gt;</div>
+			</section>
+
+			<!-- ---- 02 Settings drill-down ---- -->
+			<section class="demo-section" id="demo-settings">
+				<h2>Settings, the way they should <em>feel</em>.</h2>
+				<p class="demo-desc">
+					Same component, different content. Here panels carry icon-prefixed rows, decorative
+					toggles, and value displays — proving the stack stays out of your way and lets the
+					content speak.
+				</p>
+				<div class="demo-stage">
+					<div class="ps-frame ps-frame--tall">
+						<panel-stack initial="settings-root" effect="stack">
+							<stack-panel handle="settings-root">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<span class="ps-panel__header-spacer"></span>
+										<span class="ps-panel__title">Settings</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="settings-general" data-stack-focus>
+											<span class="ps-row__icon">G</span>
+											<span class="ps-row__label">General</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-display">
+											<span class="ps-row__icon">D</span>
+											<span class="ps-row__label">Display &amp; brightness</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-sounds">
+											<span class="ps-row__icon">S</span>
+											<span class="ps-row__label">Sounds</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-notifications">
+											<span class="ps-row__icon">N</span>
+											<span class="ps-row__label">Notifications</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-privacy">
+											<span class="ps-row__icon">P</span>
+											<span class="ps-row__label">Privacy</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-general">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">General</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row">
+											<span class="ps-row__label">About</span>
+											<span class="ps-row__value">v17.4</span>
+										</div>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-general-language">
+											<span class="ps-row__label">Language</span>
+											<span class="ps-row__value">English</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-general-keyboard">
+											<span class="ps-row__label">Keyboard</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<div class="ps-row">
+											<span class="ps-row__label">Auto-correction</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Caps lock</span>
+											<span class="ps-toggle" aria-hidden="true"></span>
+										</div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-general-language">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Language</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-section-label">Active</div>
+										<div class="ps-row">
+											<span class="ps-row__label">English (United States)</span>
+											<span class="ps-row__value" style="color: var(--gold)">✓</span>
+										</div>
+										<div class="ps-section-label">Available</div>
+										<div class="ps-row"><span class="ps-row__label">Français</span></div>
+										<div class="ps-row"><span class="ps-row__label">Deutsch</span></div>
+										<div class="ps-row"><span class="ps-row__label">Español</span></div>
+										<div class="ps-row"><span class="ps-row__label">日本語</span></div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-general-keyboard">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Keyboard</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row">
+											<span class="ps-row__label">Predictive text</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Smart punctuation</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Slide to type</span>
+											<span class="ps-toggle" aria-hidden="true"></span>
+										</div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-display">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Display</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row">
+											<span class="ps-row__label">Dark mode</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Auto-brightness</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<button class="ps-row" type="button" data-action-stack-push target="settings-display-text">
+											<span class="ps-row__label">Text size</span>
+											<span class="ps-row__value">Default</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<div class="ps-row">
+											<span class="ps-row__label">Bold text</span>
+											<span class="ps-toggle" aria-hidden="true"></span>
+										</div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-display-text">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Text size</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Small</span></div>
+										<div class="ps-row"><span class="ps-row__label">Default</span><span class="ps-row__value" style="color: var(--gold)">✓</span></div>
+										<div class="ps-row"><span class="ps-row__label">Large</span></div>
+										<div class="ps-row"><span class="ps-row__label">Extra large</span></div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-sounds">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Sounds</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row">
+											<span class="ps-row__label">Ringer &amp; alerts</span>
+											<span class="ps-row__value">75%</span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Change with buttons</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Haptics</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-notifications">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Notifications</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row">
+											<span class="ps-row__label">Show previews</span>
+											<span class="ps-row__value">When unlocked</span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Scheduled summary</span>
+											<span class="ps-toggle" aria-hidden="true"></span>
+										</div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="settings-privacy">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Privacy</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row">
+											<span class="ps-row__label">Location services</span>
+											<span class="ps-toggle ps-toggle--on" aria-hidden="true"></span>
+										</div>
+										<div class="ps-row">
+											<span class="ps-row__label">Analytics</span>
+											<span class="ps-toggle" aria-hidden="true"></span>
+										</div>
+									</div>
+								</div>
+							</stack-panel>
+						</panel-stack>
+					</div>
+				</div>
+			</section>
+
+			<!-- ---- 03 Wizard ---- -->
+			<section class="demo-section" id="demo-wizard">
+				<h2>A wizard, walking <em>forward</em>.</h2>
+				<p class="demo-desc">
+					Steppers are just stacks where you only call <code>push</code>. Each step
+					hits a "Continue" button to advance, or "Back" to retreat one level. The
+					Confirm step calls <code>reset()</code> to return to the start when you submit.
+				</p>
+				<div class="demo-stage">
+					<div class="ps-frame ps-frame--wide">
+						<panel-stack initial="wiz-account" id="wiz-stack">
+							<stack-panel handle="wiz-account">
+								<div class="ps-wizard">
+									<span class="ps-wizard__step">Step 1 of 4</span>
+									<h3 class="ps-wizard__title">Create your account</h3>
+									<p class="ps-wizard__hint">Start with your name and email — we'll never share it.</p>
+									<div class="ps-wizard__field">
+										<label class="ps-wizard__label">Full name</label>
+										<input class="ps-wizard__input" type="text" value="Tim Cook" data-stack-focus />
+									</div>
+									<div class="ps-wizard__field">
+										<label class="ps-wizard__label">Email</label>
+										<input class="ps-wizard__input" type="email" value="hi@example.com" />
+									</div>
+									<div class="ps-wizard__actions">
+										<span></span>
+										<button class="ps-wizard__primary" type="button" data-action-stack-push target="wiz-profile">
+											Continue →
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="wiz-profile">
+								<div class="ps-wizard">
+									<span class="ps-wizard__step">Step 2 of 4</span>
+									<h3 class="ps-wizard__title">Tell us about you</h3>
+									<p class="ps-wizard__hint">A few details so we can tailor the experience.</p>
+									<div class="ps-wizard__field">
+										<label class="ps-wizard__label">Role</label>
+										<input class="ps-wizard__input" type="text" value="Frontend developer" data-stack-focus />
+									</div>
+									<div class="ps-wizard__field">
+										<label class="ps-wizard__label">Company (optional)</label>
+										<input class="ps-wizard__input" type="text" value="Magic Spells" />
+									</div>
+									<div class="ps-wizard__actions">
+										<button class="ps-wizard__back" type="button" data-action-stack-pop>← Back</button>
+										<button class="ps-wizard__primary" type="button" data-action-stack-push target="wiz-prefs">
+											Continue →
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="wiz-prefs">
+								<div class="ps-wizard">
+									<span class="ps-wizard__step">Step 3 of 4</span>
+									<h3 class="ps-wizard__title">Pick your preferences</h3>
+									<p class="ps-wizard__hint">You can change these later.</p>
+									<label class="ps-wizard__option">
+										<input type="checkbox" checked data-stack-focus />
+										Send me product updates
+									</label>
+									<label class="ps-wizard__option">
+										<input type="checkbox" checked />
+										Weekly digest
+									</label>
+									<label class="ps-wizard__option">
+										<input type="checkbox" />
+										Beta features
+									</label>
+									<div class="ps-wizard__actions">
+										<button class="ps-wizard__back" type="button" data-action-stack-pop>← Back</button>
+										<button class="ps-wizard__primary" type="button" data-action-stack-push target="wiz-confirm">
+											Continue →
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="wiz-confirm">
+								<div class="ps-wizard">
+									<span class="ps-wizard__step">Step 4 of 4</span>
+									<h3 class="ps-wizard__title">Looks good?</h3>
+									<div class="ps-wizard__confirm">
+										<div><strong>Tim Cook</strong> · hi@example.com</div>
+										<div>Frontend developer at <strong>Magic Spells</strong></div>
+										<div>Subscribed to product updates and the weekly digest</div>
+									</div>
+									<div class="ps-wizard__actions">
+										<button class="ps-wizard__back" type="button" data-action-stack-pop>← Back</button>
+										<button class="ps-wizard__primary" type="button" id="wiz-finish" data-stack-focus>
+											Submit ✓
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+						</panel-stack>
+					</div>
+				</div>
+			</section>
+
+			<!-- ---- 04 Behavior playground ---- -->
+			<section class="demo-section" id="demo-playground">
+				<h2>Tune the <em>feel</em> of it.</h2>
+				<p class="demo-desc">
+					Every part of the motion is exposed as a CSS custom property. Drag the sliders to
+					change the slide distance, blur amount, horizontal scale, easing duration, and
+					the opacity of inactive panels. Push and pop to feel the difference.
+				</p>
+				<div class="demo-stage demo-stage--playground" style="align-items: stretch;">
+					<div class="ps-frame ps-frame--tall">
+						<panel-stack initial="lab-root" id="lab-stack" effect="slide">
+							<stack-panel handle="lab-root">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<span class="ps-panel__header-spacer"></span>
+										<span class="ps-panel__title">Playground</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="lab-a" data-stack-focus>
+											<span class="ps-row__icon">A</span>
+											<span class="ps-row__label">Section A</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="lab-b">
+											<span class="ps-row__icon">B</span>
+											<span class="ps-row__label">Section B</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="lab-c">
+											<span class="ps-row__icon">C</span>
+											<span class="ps-row__label">Section C</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="lab-a">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Section A</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="lab-a-deep">
+											<span class="ps-row__label">Drill deeper</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<div class="ps-row"><span class="ps-row__label">A child item</span></div>
+										<div class="ps-row"><span class="ps-row__label">Another child</span></div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="lab-a-deep">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">A — deep</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Deepest item</span></div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="lab-b">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Section B</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Item one</span></div>
+										<div class="ps-row"><span class="ps-row__label">Item two</span></div>
+										<div class="ps-row"><span class="ps-row__label">Item three</span></div>
+									</div>
+								</div>
+							</stack-panel>
+
+							<stack-panel handle="lab-c">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Section C</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Quiet content</span></div>
+									</div>
+								</div>
+							</stack-panel>
+						</panel-stack>
+					</div>
+
+					<div class="playground-grid">
+						<div class="slider-row">
+							<div class="slider-head">
+								<span class="slider-label">Duration</span>
+								<span class="slider-value" id="lab-duration-val">420ms</span>
+							</div>
+							<input type="range" id="lab-duration" min="100" max="1200" step="20" value="420" />
+						</div>
+						<div class="slider-row">
+							<div class="slider-head">
+								<span class="slider-label">Blur</span>
+								<span class="slider-value" id="lab-blur-val">2px</span>
+							</div>
+							<input type="range" id="lab-blur" min="0" max="8" step="0.5" value="2" />
+						</div>
+						<div class="slider-row">
+							<div class="slider-head">
+								<span class="slider-label">Scale X</span>
+								<span class="slider-value" id="lab-scalex-val">1.00</span>
+							</div>
+							<input type="range" id="lab-scalex" min="-1.5" max="1.5" step="0.05" value="1" />
+						</div>
+						<div class="slider-row">
+							<div class="slider-head">
+								<span class="slider-label">Offset</span>
+								<span class="slider-value" id="lab-offset-val">100%</span>
+							</div>
+							<input type="range" id="lab-offset" min="100" max="200" step="5" value="100" />
+						</div>
+						<div class="slider-row">
+							<div class="slider-head">
+								<span class="slider-label">Inactive opacity</span>
+								<span class="slider-value" id="lab-opacity-val">0.30</span>
+							</div>
+							<input type="range" id="lab-opacity" min="0" max="1" step="0.05" value="0.3" />
+						</div>
+						<div class="control-row">
+							<span class="slider-label">Transition</span>
+							<div class="control-buttons">
+								<button class="btn" id="lab-effect-slide" data-active>Slide</button>
+								<button class="btn" id="lab-effect-stack">Stack</button>
+							</div>
+						</div>
+						<div class="control-row">
+							<span class="slider-label">Presets</span>
+							<div class="control-buttons">
+								<button class="btn" id="lab-flat">Flat slide</button>
+								<button class="btn" id="lab-extreme">Extreme</button>
+								<button class="btn" id="lab-motion-blur">Motion blur</button>
+								<button class="btn" id="lab-reset">Reset</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- ---- 05 Events ---- -->
+			<section class="demo-section" id="demo-events">
+				<h2>Listen <em>in</em>.</h2>
+				<p class="demo-desc">
+					Every push, pop, and reset fires a bubbling, composed <code>CustomEvent</code>.
+					The before-events are cancelable — call <code>e.preventDefault()</code> in a
+					handler to abort the navigation. Try clicking around the panel; the log on the
+					right captures every event.
+				</p>
+				<div class="demo-stage">
+					<div class="ps-frame ps-frame--tall">
+						<panel-stack initial="evt-root" id="evt-stack">
+							<stack-panel handle="evt-root">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<span class="ps-panel__header-spacer"></span>
+										<span class="ps-panel__title">Events</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="evt-one" data-stack-focus>
+											<span class="ps-row__label">Push to one</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+										<button class="ps-row" type="button" data-action-stack-push target="evt-two">
+											<span class="ps-row__label">Push to two</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="evt-one">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">One</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="evt-deep">
+											<span class="ps-row__label">Even deeper</span>
+											<svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+										</button>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="evt-two">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Two</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Leaf node.</span></div>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="evt-deep">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+										</button>
+										<span class="ps-panel__title">Deep</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Bottom of the well.</span></div>
+									</div>
+								</div>
+							</stack-panel>
+						</panel-stack>
+					</div>
+					<div class="event-log" id="evt-log">
+						<span class="event-log__line event-log__empty">// waiting for events…</span>
+					</div>
+				</div>
+				<div class="controls">
+					<button class="btn" id="evt-reset">Call .reset()</button>
+					<button class="btn" id="evt-clear-log">Clear log</button>
+				</div>
+				<div class="code-block">stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-stack:push'</span>, (e) =&gt; {
+  console.log(e.detail) <span class="hl-cm">// { fromHandle: 'evt-root', toHandle: 'evt-one' }</span>
+})
+
+<span class="hl-cm">// cancelable — preventDefault() aborts the push</span>
+stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-stack:push'</span>, (e) =&gt; {
+  <span class="hl-tag">if</span> (e.detail.toHandle === <span class="hl-val">'evt-deep'</span>) e.preventDefault();
+})</div>
+			</section>
+
+			<!-- ---- 06 Reference ---- -->
+			<section class="demo-section" id="demo-reference">
+				<h2>The whole API, on one screen.</h2>
+				<p class="demo-desc">
+					Two elements, three methods, three events, eight CSS custom properties. That's
+					everything.
+				</p>
+
+				<h3 class="ref-heading">Elements &amp; attributes</h3>
+				<div class="ref-table">
+					<div class="ref-row ref-head">
+						<div>Element / attribute</div><div>On</div><div>Description</div>
+					</div>
+					<div class="ref-row">
+						<div><code>&lt;panel-stack&gt;</code></div><div>—</div><div>Root container managing the stack</div>
+					</div>
+					<div class="ref-row">
+						<div><code>initial</code></div><div>panel-stack</div><div>Handle of the panel to start on (default: first child)</div>
+					</div>
+					<div class="ref-row">
+						<div><code>&lt;stack-panel&gt;</code></div><div>—</div><div>One panel in the stack</div>
+					</div>
+					<div class="ref-row">
+						<div><code>handle</code></div><div>stack-panel</div><div>Identifier used by push() / pop()</div>
+					</div>
+					<div class="ref-row">
+						<div><code>data-action-stack-push</code></div><div>any descendant</div><div>Click trigger that calls push() with the <code>target</code> attribute</div>
+					</div>
+					<div class="ref-row">
+						<div><code>target</code></div><div>push trigger</div><div>Handle of the panel to push to</div>
+					</div>
+					<div class="ref-row">
+						<div><code>data-action-stack-pop</code></div><div>any descendant</div><div>Click trigger that calls pop()</div>
+					</div>
+					<div class="ref-row">
+						<div><code>data-stack-focus</code></div><div>any descendant</div><div>First focusable target when its panel becomes current</div>
+					</div>
+				</div>
+
+				<h3 class="ref-heading">Methods &amp; getters</h3>
+				<div class="ref-table">
+					<div class="ref-row ref-head">
+						<div>Name</div><div>Returns</div><div>Description</div>
+					</div>
+					<div class="ref-row">
+						<div><code>push(handle)</code></div><div>boolean</div><div>Slide to the named panel · returns false if cancelled or unknown</div>
+					</div>
+					<div class="ref-row">
+						<div><code>pop()</code></div><div>boolean</div><div>Pop the top panel · false if at root or cancelled</div>
+					</div>
+					<div class="ref-row">
+						<div><code>reset()</code></div><div>void</div><div>Collapse the stack to root</div>
+					</div>
+					<div class="ref-row">
+						<div><code>currentHandle</code></div><div>string</div><div>Read-only · top of the stack</div>
+					</div>
+					<div class="ref-row">
+						<div><code>currentPanel</code></div><div>StackPanel</div><div>Read-only · the visible &lt;stack-panel&gt; element</div>
+					</div>
+					<div class="ref-row">
+						<div><code>depth</code></div><div>number</div><div>Read-only · stack length (root = 1)</div>
+					</div>
+				</div>
+
+				<h3 class="ref-heading">Events</h3>
+				<div class="ref-table">
+					<div class="ref-row ref-head">
+						<div>Event</div><div>Cancelable</div><div>Detail</div>
+					</div>
+					<div class="ref-row">
+						<div><code>panel-stack:push</code></div><div>yes</div><div><code>{ fromHandle, toHandle }</code></div>
+					</div>
+					<div class="ref-row">
+						<div><code>panel-stack:pop</code></div><div>yes</div><div><code>{ fromHandle, toHandle }</code></div>
+					</div>
+					<div class="ref-row">
+						<div><code>panel-stack:reset</code></div><div>—</div><div><code>{ rootHandle }</code></div>
+					</div>
+				</div>
+
+				<h3 class="ref-heading">CSS custom properties</h3>
+				<div class="ref-table">
+					<div class="ref-row ref-head">
+						<div>Property</div><div>Default</div><div>Description</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-transition-duration</code></div><div><code>420ms</code></div><div>Slide animation duration</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-transition-timing</code></div><div><code>cubic-bezier(0.16, 0.87, 0.64, 1)</code></div><div>Easing for the slide</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-blur-duration</code></div><div><code>280ms</code></div><div>Separate timing for the blur fade</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-perspective</code></div><div><code>1200px</code></div><div>Depth of the 3D scene</div>
+					</div>
+				</div>
+
+				<h3 class="ref-heading">Per-state values</h3>
+				<p class="demo-desc" style="margin-bottom: 1.25rem">
+					Each state (<code>current</code>, <code>previous</code>, <code>next</code>) has its
+					own translate, scale, blur, and opacity custom property. Override the ones for a
+					single state to break symmetry — e.g. make panels exit faster than they enter.
+				</p>
+				<div class="ref-table">
+					<div class="ref-row ref-head">
+						<div>Property pattern</div><div>Defaults</div><div>Notes</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-translate-{state}</code></div><div><code>0%</code> · <code>calc(-100% - 50px)</code> · <code>calc(100% + 50px)</code></div><div>X-axis translate per state</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-scale-x-{state}</code></div><div><code>1</code> · <code>1.1</code> · <code>1.1</code></div><div>Horizontal scale per state (values &gt; 1 stretch, &lt; 1 shrink, negative flips)</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-blur-{state}</code></div><div><code>0px</code> · <code>2px</code> · <code>2px</code></div><div>Filter blur per state</div>
+					</div>
+					<div class="ref-row">
+						<div><code>--ps-opacity-{state}</code></div><div><code>1</code> · <code>0.3</code> · <code>0.3</code></div><div>Opacity per state</div>
+					</div>
+				</div>
+
+				<h3 class="ref-heading">Browser support</h3>
+				<p class="demo-desc" style="margin-bottom: 0">
+					Modern browsers with custom elements + the <code>inert</code> attribute. Works in
+					Chrome 102+, Firefox 112+, Safari 15.5+, Edge 102+. Honors
+					<code>prefers-reduced-motion: reduce</code> by suppressing the scale, blur,
+					and transition.
+				</p>
+			</section>
+		</main>
+
+		<footer>
+			<p>&copy; 2026 Magic Spells · MIT License</p>
+		</footer>
+
+		<script type="module" src="../dist/panel-stack.esm.js"></script>
+		<script type="module">
+			// ---- Copy install command ----
+			const installValue = document.querySelector('.install-value');
+			if (installValue) {
+				installValue.addEventListener('click', () => {
+					navigator.clipboard.writeText(installValue.textContent.trim()).then(() => {
+						const original = installValue.textContent;
+						installValue.textContent = 'Copied!';
+						setTimeout(() => {
+							installValue.textContent = original;
+						}, 1500);
+					});
+				});
+			}
+
+			await customElements.whenDefined('panel-stack');
+
+			// ---- Demo 1: mobile menu controls ----
+			const menuStack = document.getElementById('menu-stack');
+			document.getElementById('menu-reset').addEventListener('click', () => menuStack.reset());
+			document.getElementById('menu-deeplink').addEventListener('click', () => {
+				menuStack.reset();
+				// Push the path one level at a time so each transition is visible.
+				menuStack.push('menu-shop');
+				setTimeout(() => menuStack.push('menu-shop-women'), 280);
+				setTimeout(() => menuStack.push('menu-shop-women-dresses'), 560);
+			});
+
+			// ---- Demo 3: wizard finish ----
+			const wizStack = document.getElementById('wiz-stack');
+			document.getElementById('wiz-finish').addEventListener('click', () => {
+				wizStack.reset();
+			});
+
+			// ---- Demo 4: behavior playground ----
+			const labStack = document.getElementById('lab-stack');
+			const labDuration = document.getElementById('lab-duration');
+			const labBlur = document.getElementById('lab-blur');
+			const labScaleX = document.getElementById('lab-scalex');
+			const labOffset = document.getElementById('lab-offset');
+			const labOpacity = document.getElementById('lab-opacity');
+			const labDurationVal = document.getElementById('lab-duration-val');
+			const labBlurVal = document.getElementById('lab-blur-val');
+			const labScaleXVal = document.getElementById('lab-scalex-val');
+			const labOffsetVal = document.getElementById('lab-offset-val');
+			const labOpacityVal = document.getElementById('lab-opacity-val');
+
+			const updateLab = () => {
+				labDurationVal.textContent = `${labDuration.value}ms`;
+				labBlurVal.textContent = `${labBlur.value}px`;
+				labScaleXVal.textContent = Number(labScaleX.value).toFixed(2);
+				labOffsetVal.textContent = `${labOffset.value}%`;
+				labOpacityVal.textContent = Number(labOpacity.value).toFixed(2);
+				labStack.style.setProperty('--ps-transition-duration', `${labDuration.value}ms`);
+				// Keep the previous/next states symmetric by mirroring the slider value.
+				labStack.style.setProperty('--ps-blur-previous', `${labBlur.value}px`);
+				labStack.style.setProperty('--ps-blur-next', `${labBlur.value}px`);
+				labStack.style.setProperty('--ps-scale-x-previous', labScaleX.value);
+				labStack.style.setProperty('--ps-scale-x-next', labScaleX.value);
+				labStack.style.setProperty('--ps-translate-previous', `-${labOffset.value}%`);
+				labStack.style.setProperty('--ps-translate-next', `${labOffset.value}%`);
+				labStack.style.setProperty('--ps-opacity-previous', labOpacity.value);
+				labStack.style.setProperty('--ps-opacity-next', labOpacity.value);
+			};
+			[labDuration, labBlur, labScaleX, labOffset, labOpacity].forEach((input) =>
+				input.addEventListener('input', updateLab)
+			);
+
+			const setLab = ({ duration, blur, scaleX, offset, opacity }) => {
+				labDuration.value = duration;
+				labBlur.value = blur;
+				labScaleX.value = scaleX;
+				labOffset.value = offset;
+				labOpacity.value = opacity;
+				updateLab();
+			};
+
+			document.getElementById('lab-reset').addEventListener('click', () =>
+				setLab({ duration: 420, blur: 2, scaleX: 1.1, offset: 100, opacity: 0.3 })
+			);
+			document.getElementById('lab-flat').addEventListener('click', () =>
+				setLab({ duration: 320, blur: 0, scaleX: 1, offset: 100, opacity: 1 })
+			);
+			document.getElementById('lab-extreme').addEventListener('click', () =>
+				setLab({ duration: 900, blur: 6, scaleX: -1, offset: 160, opacity: 0.1 })
+			);
+			document.getElementById('lab-motion-blur').addEventListener('click', () =>
+				setLab({ duration: 400, blur: 4, scaleX: 1.2, offset: 120, opacity: 0.1 })
+			);
+
+			const labEffectSlide = document.getElementById('lab-effect-slide');
+			const labEffectStack = document.getElementById('lab-effect-stack');
+			const setLabEffect = (effect) => {
+				labStack.setAttribute('effect', effect);
+				labEffectSlide.toggleAttribute('data-active', effect === 'slide');
+				labEffectStack.toggleAttribute('data-active', effect === 'stack');
+			};
+			labEffectSlide.addEventListener('click', () => setLabEffect('slide'));
+			labEffectStack.addEventListener('click', () => setLabEffect('stack'));
+
+			updateLab();
+
+			// ---- Demo 5: events ----
+			const evtStack = document.getElementById('evt-stack');
+			const evtLog = document.getElementById('evt-log');
+
+			const logEvent = (name, detail) => {
+				const empty = evtLog.querySelector('.event-log__empty');
+				if (empty) empty.remove();
+				const line = document.createElement('span');
+				line.className = 'event-log__line';
+				const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+				line.innerHTML = `<span class="hl-cm">${time}</span> <span class="hl-tag">${name}</span> <span class="hl-val">${JSON.stringify(detail)}</span>`;
+				evtLog.appendChild(line);
+				evtLog.scrollTop = evtLog.scrollHeight;
+				const lines = evtLog.querySelectorAll('.event-log__line');
+				if (lines.length > 50) lines[0].remove();
+			};
+
+			evtStack.addEventListener('panel-stack:push', (e) => logEvent('panel-stack:push', e.detail));
+			evtStack.addEventListener('panel-stack:pop', (e) => logEvent('panel-stack:pop', e.detail));
+			evtStack.addEventListener('panel-stack:reset', (e) =>
+				logEvent('panel-stack:reset', e.detail)
+			);
+
+			document.getElementById('evt-reset').addEventListener('click', () => evtStack.reset());
+			document.getElementById('evt-clear-log').addEventListener('click', () => {
+				evtLog.innerHTML =
+					'<span class="event-log__line event-log__empty">// log cleared</span>';
+			});
+		</script>
+	</body>
+</html>

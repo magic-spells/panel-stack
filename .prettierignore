@@ -1,0 +1,5 @@
+**/*.min.js
+**/*.md
+dist/
+demo/dist/
+node_modules/

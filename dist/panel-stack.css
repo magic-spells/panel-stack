@@ -1,0 +1,114 @@
+:is(panel-stack:not(:defined), stack-panel:not(:defined)) {
+  visibility: hidden;
+}
+
+panel-stack {
+  --ps-transition-duration: .42s;
+  --ps-transition-timing: cubic-bezier(.16, .87, .64, 1);
+  --ps-perspective: 1200px;
+  --ps-translate-current: 0%;
+  --ps-scale-x-current: 1;
+  --ps-scale-y-current: 1;
+  --ps-blur-current: 0px;
+  --ps-opacity-current: 1;
+  --ps-brightness-current: 1;
+  --ps-z-index-current: 1;
+  --ps-translate-previous: calc(-100% - 50px);
+  --ps-scale-x-previous: 1.1;
+  --ps-scale-y-previous: 1;
+  --ps-blur-previous: 2px;
+  --ps-opacity-previous: .1;
+  --ps-brightness-previous: 1;
+  --ps-z-index-previous: 0;
+  --ps-translate-next: calc(100% + 50px);
+  --ps-scale-x-next: 1.1;
+  --ps-scale-y-next: 1;
+  --ps-blur-next: 2px;
+  --ps-opacity-next: .1;
+  --ps-brightness-next: 1;
+  --ps-z-index-next: 2;
+  border-radius: inherit;
+  width: 100%;
+  height: 100%;
+  perspective: var(--ps-perspective);
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+panel-stack[effect="stack"] stack-panel {
+  --ps-translate-previous: 0%;
+  --ps-scale-x-previous: .95;
+  --ps-scale-y-previous: .95;
+  --ps-blur-previous: 1px;
+  --ps-opacity-previous: 1;
+  --ps-brightness-previous: .5;
+  --ps-z-index-previous: -1;
+  --ps-inner-shadow-previous: inset 0 0 40px #00000080;
+}
+
+panel-stack[effect="stack"] > stack-panel:after {
+  content: "";
+  pointer-events: none;
+  border-radius: inherit;
+  transition: box-shadow var(--ps-transition-duration) var(--ps-transition-timing);
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 #0000;
+}
+
+panel-stack[effect="stack"] > stack-panel[state="previous"]:after {
+  box-shadow: var(--ps-inner-shadow-previous);
+}
+
+stack-panel {
+  border-radius: inherit;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--ps-transition-duration) var(--ps-transition-timing),
+		filter var(--ps-transition-duration) var(--ps-transition-timing);
+  will-change: transform, filter;
+  background: #00f;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+stack-panel[state="current"] {
+  transform: translateX(var(--ps-translate-current)) scaleX(var(--ps-scale-x-current))
+		scaleY(var(--ps-scale-y-current));
+  filter: blur(var(--ps-blur-current)) opacity(var(--ps-opacity-current))
+		brightness(var(--ps-brightness-current));
+  z-index: var(--ps-z-index-current);
+}
+
+stack-panel[state="previous"] {
+  transform: translateX(var(--ps-translate-previous)) scaleX(var(--ps-scale-x-previous))
+		scaleY(var(--ps-scale-y-previous));
+  filter: blur(var(--ps-blur-previous)) opacity(var(--ps-opacity-previous))
+		brightness(var(--ps-brightness-previous));
+  z-index: var(--ps-z-index-previous);
+  pointer-events: none;
+}
+
+stack-panel[state="next"] {
+  transform: translateX(var(--ps-translate-next)) scaleX(var(--ps-scale-x-next))
+		scaleY(var(--ps-scale-y-next));
+  filter: blur(var(--ps-blur-next)) opacity(var(--ps-opacity-next))
+		brightness(var(--ps-brightness-next));
+  z-index: var(--ps-z-index-next);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  stack-panel {
+    transition: none;
+  }
+
+  stack-panel[state="previous"], stack-panel[state="next"] {
+    filter: opacity(0);
+  }
+}
+/*$vite$:1*/

@@ -1,0 +1,128 @@
+/* Hide host until customElements.define runs (avoids flash of stacked panels) */
+panel-stack:not(:defined),
+stack-panel:not(:defined) {
+	visibility: hidden;
+}
+
+panel-stack {
+	--ps-transition-duration: 420ms;
+	--ps-transition-timing: cubic-bezier(0.16, 0.87, 0.64, 1);
+	--ps-perspective: 1200px;
+
+	/* Per-state values. Override these to retune the motion without
+	   touching the rules below. The "current" state is the resting target;
+	   "previous" sits to the left, "next" sits to the right. */
+	--ps-translate-current: 0%;
+	--ps-scale-x-current: 1;
+	--ps-scale-y-current: 1;
+	--ps-blur-current: 0px;
+	--ps-opacity-current: 1;
+	--ps-brightness-current: 1;
+	--ps-z-index-current: 1;
+
+	--ps-translate-previous: calc(-100% - 50px);
+	--ps-scale-x-previous: 1.1;
+	--ps-scale-y-previous: 1;
+	--ps-blur-previous: 2px;
+	--ps-opacity-previous: 0.1;
+	--ps-brightness-previous: 1;
+	--ps-z-index-previous: 0;
+
+	--ps-translate-next: calc(100% + 50px);
+	--ps-scale-x-next: 1.1;
+	--ps-scale-y-next: 1;
+	--ps-blur-next: 2px;
+	--ps-opacity-next: 0.1;
+	--ps-brightness-next: 1;
+	--ps-z-index-next: 2;
+
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	border-radius: inherit;
+	perspective: var(--ps-perspective);
+}
+
+/* effect="stack" — previous panel shrinks, blurs, and darkens behind the
+   current panel instead of sliding off to the left. */
+panel-stack[effect='stack'] stack-panel {
+	--ps-translate-previous: 0%;
+	--ps-scale-x-previous: 0.95;
+	--ps-scale-y-previous: 0.95;
+	--ps-blur-previous: 1px;
+	--ps-opacity-previous: 1;
+	--ps-brightness-previous: 0.5;
+	--ps-z-index-previous: -1;
+	--ps-inner-shadow-previous: inset 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Inner shadow overlay — only meaningful for effect="stack" on previous panels.
+   Lives on a pseudo so it paints above the panel's content, and stays on every
+   stack-panel (transparent) so the shadow can transition in/out with state. */
+panel-stack[effect='stack'] > stack-panel::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	box-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0);
+	transition: box-shadow var(--ps-transition-duration) var(--ps-transition-timing);
+}
+
+panel-stack[effect='stack'] > stack-panel[state='previous']::after {
+	box-shadow: var(--ps-inner-shadow-previous);
+}
+
+stack-panel {
+	position: absolute;
+	background: blue;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	display: block;
+	border-radius: inherit;
+	overflow: hidden;
+	transition:
+		transform var(--ps-transition-duration) var(--ps-transition-timing),
+		filter var(--ps-transition-duration) var(--ps-transition-timing);
+	will-change: transform, filter;
+}
+
+stack-panel[state='current'] {
+	transform: translateX(var(--ps-translate-current)) scaleX(var(--ps-scale-x-current))
+		scaleY(var(--ps-scale-y-current));
+	filter: blur(var(--ps-blur-current)) opacity(var(--ps-opacity-current))
+		brightness(var(--ps-brightness-current));
+	z-index: var(--ps-z-index-current);
+}
+
+stack-panel[state='previous'] {
+	transform: translateX(var(--ps-translate-previous)) scaleX(var(--ps-scale-x-previous))
+		scaleY(var(--ps-scale-y-previous));
+	filter: blur(var(--ps-blur-previous)) opacity(var(--ps-opacity-previous))
+		brightness(var(--ps-brightness-previous));
+	z-index: var(--ps-z-index-previous);
+	pointer-events: none;
+}
+
+stack-panel[state='next'] {
+	transform: translateX(var(--ps-translate-next)) scaleX(var(--ps-scale-x-next))
+		scaleY(var(--ps-scale-y-next));
+	filter: blur(var(--ps-blur-next)) opacity(var(--ps-opacity-next))
+		brightness(var(--ps-brightness-next));
+	z-index: var(--ps-z-index-next);
+	pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	stack-panel {
+		transition: none;
+	}
+	stack-panel[state='previous'],
+	stack-panel[state='next'] {
+		filter: opacity(0);
+	}
+}

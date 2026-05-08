@@ -1,0 +1,70 @@
+{
+	"name": "@magic-spells/panel-stack",
+	"version": "0.1.0",
+	"description": "A nested-panel stack web component with fluid push/pop transitions — drill-down menus, settings flows, multi-step wizards.",
+	"author": "Cory Schulz",
+	"license": "MIT",
+	"type": "module",
+	"main": "dist/panel-stack.esm.js",
+	"module": "dist/panel-stack.esm.js",
+	"unpkg": "dist/panel-stack.min.js",
+	"style": "dist/panel-stack.min.css",
+	"exports": {
+		".": {
+			"import": "./dist/panel-stack.esm.js",
+			"default": "./dist/panel-stack.esm.js"
+		},
+		"./css": "./dist/panel-stack.css",
+		"./css/min": "./dist/panel-stack.min.css"
+	},
+	"sideEffects": true,
+	"types": "./types.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/magic-spells/panel-stack.git"
+	},
+	"homepage": "https://github.com/magic-spells/panel-stack#readme",
+	"bugs": {
+		"url": "https://github.com/magic-spells/panel-stack/issues"
+	},
+	"keywords": [
+		"panel-stack",
+		"navigation",
+		"drill-down",
+		"nested-menu",
+		"wizard",
+		"stepper",
+		"web-components",
+		"custom-elements",
+		"mobile-menu"
+	],
+	"files": [
+		"dist/",
+		"types.d.ts"
+	],
+	"scripts": {
+		"build": "NODE_ENV=production node scripts/build.mjs",
+		"dev": "NODE_ENV=development node scripts/build.mjs",
+		"lint": "eslint src/ scripts/",
+		"format": "prettier --write .",
+		"prepublishOnly": "npm run build"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	},
+	"browserslist": [
+		"last 2 versions",
+		"not dead",
+		"not ie <= 11"
+	],
+	"devDependencies": {
+		"@eslint/js": "^9.38.0",
+		"eslint": "^9.38.0",
+		"globals": "^15.15.0",
+		"lightningcss": "^1.29.3",
+		"prettier": "^3.3.3",
+		"terser": "^5.16.0",
+		"vite": "^8.0.10"
+	}
+}
