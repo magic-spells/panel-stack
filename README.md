@@ -4,7 +4,7 @@ A nested-panel stack web component with fluid push/pop transitions. Built for mo
 
 🔍 **[Live Demo](https://magic-spells.github.io/panel-stack/demo/)** — See it in action!
 
-- **1.25 KB JS gzip**, 0.78 KB CSS gzip, zero dependencies
+- **1.27 KB JS gzip**, 0.77 KB CSS gzip, zero dependencies
 - Two custom elements: `<panel-stack>` + `<stack-panel>`
 - Honors `prefers-reduced-motion`
 - `inert` on hidden panels — focus stays where it should
@@ -52,9 +52,10 @@ The parent of `<panel-stack>` needs a defined size — panels are `position: abs
 ```js
 const stack = document.querySelector('panel-stack');
 
-stack.push('shop');    // slide to a panel
-stack.pop();           // back one level
-stack.reset();         // collapse to root
+stack.push('shop');              // slide to a panel
+stack.push('shop', triggerEl);   // optional 2nd arg — pop() restores focus to it
+stack.pop();                     // back one level
+stack.reset();                   // collapse to root
 
 stack.currentHandle;   // 'shop'
 stack.currentPanel;    // <stack-panel handle="shop">
@@ -88,7 +89,7 @@ Two visual styles for how `state="previous"` panels look. Pick one with the `eff
 <panel-stack effect="stack"> … </panel-stack>   <!-- shrinks + blurs + dims behind current -->
 ```
 
-`effect="stack"` keeps the previous panel in place while it scales to `0.95`, blurs `1px`, dims to `brightness(0.8)`, and drops to `z-index: -1` behind the current panel. Pop, and it pops back to full size, sharp, and bright.
+`effect="stack"` keeps the previous panel in place while it scales to `0.95`, blurs `1px`, dims to `brightness(0.5)`, and drops to `z-index: -1` behind the current panel. Pop, and it pops back to full size, sharp, and bright.
 
 Both effects share the same per-state CSS variables, so you can fine-tune either one.
 
@@ -120,13 +121,14 @@ Per-state position and filter values. Each state has its own translate, scale, b
 | `--ps-scale-x-{state}` | `1` · `1.1` · `1.1` |
 | `--ps-scale-y-{state}` | `1` · `1` · `1` |
 | `--ps-blur-{state}` | `0px` · `2px` · `2px` |
-| `--ps-opacity-{state}` | `1` · `0.3` · `0.3` |
-| `--ps-brightness-{state}` | `1` · `1` · `1` |
+| `--ps-opacity-{state}` | `1` · `0.1` · `0.1` |
 | `--ps-z-index-{state}` | `1` · `0` · `2` |
+
+`--ps-brightness-previous` (default `1`) is the only brightness knob — `effect="stack"` uses it to darken the receding panel.
 
 `--ps-scale-x-{state}` and `--ps-scale-y-{state}` accept any number — values < 1 shrink the panel, values > 1 stretch it, negative values flip it (mirror).
 
-`effect="stack"` overrides the `previous` defaults to: translate `0%`, scale `0.95`, blur `1px`, opacity `1`, brightness `0.8`, z-index `-1`.
+`effect="stack"` overrides the `previous` defaults to: translate `0%`, scale `0.95`, blur `1px`, opacity `1`, brightness `0.5`, z-index `-1`. It also sets `--ps-opacity-next: 1` so panels coming in from the right aren't faded during the swap.
 
 Example — make the slide flat (no scale, no blur):
 
@@ -141,10 +143,12 @@ panel-stack {
 
 ## Focus
 
-When a panel becomes current, focus is moved to:
+On `push()` and `reset()`, focus moves to the new current panel — specifically:
 
 1. The first descendant with `data-stack-focus`, if one exists
 2. Otherwise the first focusable child (button, link, input, etc.)
+
+On `pop()`, focus is restored to the element that originally pushed the panel you're leaving — matching native back-button behavior. Declarative `data-action-stack-push` triggers are remembered automatically; for programmatic pushes pass the trigger as the second arg: `stack.push('shop', triggerEl)`. If the trigger has been removed from the DOM, pop falls back to the destination panel's first focusable.
 
 Inactive panels get `inert` so they can't trap tab navigation or screen reader focus.
 

@@ -21,14 +21,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **State stored as a stack array, not a single pointer**: `#stack = ['root', 'shop', 'shop-women']`. `pop()` returns to the prior `push()`, not just to the previous panel. This is what makes "back through three levels" work without the consumer tracking history.
 - **All animation lives in CSS**: JS only toggles the `[state]` attribute on each `<stack-panel>` between `current` / `previous` / `next`. Adding a new visual effect = pure CSS. No keyframes, no JS animation loop, no requestAnimationFrame in the component.
 - **`effect="stack"` is a CSS attribute selector, not a JS branch**: Switching effects costs nothing at runtime. Authors can add their own effects by writing `panel-stack[effect="my-style"] stack-panel[state="previous"] { … }`.
-- **`inert` + `aria-hidden="true"` on every non-current panel**: Cleared on the current panel. Prevents focus traps (tab can't escape into a panel sliding off-screen) and prevents screen readers from announcing hidden content. The CSS still uses `pointer-events: none` as a belt-and-suspenders for older browsers.
+- **`inert` (alone) on every non-current panel**: Cleared on the current panel. `inert` already removes the subtree from focus order AND from the accessibility tree, so adding `aria-hidden` on top is redundant — and worse, Chrome warns "Blocked aria-hidden because descendant retained focus" when the aria-hidden write races the focus handoff. Inert is the right primitive here. The CSS still uses `pointer-events: none` per state as a belt-and-suspenders.
 - **Declarative triggers via a single delegated click listener**: `data-action-stack-push` / `data-action-stack-pop` are handled by one click handler on the `<panel-stack>` host (uses `event.target.closest()` and `_.contains()` to scope to descendants). Cheaper than per-button binding and works for buttons added after mount.
 - **`customElements.get()` guard around both `define()` calls**: Safe across multi-import scenarios (e.g., the same package loaded from a CDN script and an ESM import) — second `define()` would otherwise throw.
 - **`border-radius: inherit` on both elements**: A wrapper with `border-radius` + `overflow: hidden` rounds the panels automatically. No `--ps-radius` needed.
 - **`prefers-reduced-motion` honored in the CSS layer**: Transitions collapse to `none` for users who request reduced motion — handled in `src/panel-stack.css`, not JS.
-- **Per-state CSS custom properties (translate / scale-x / scale-y / blur / opacity / brightness / z-index)**: Each state (`current` / `previous` / `next`) gets its own value for each axis. Override one state without touching the others. The `effect="stack"` selector overrides only the `previous` defaults.
+- **Per-state CSS custom properties (translate / scale-x / scale-y / blur / opacity / z-index)**: Each state (`current` / `previous` / `next`) gets its own value for each axis. Override one state without touching the others. Brightness is the exception — only `--ps-brightness-previous` exists, since dimming the current or next panel isn't part of any stock effect. `effect="stack"` overrides the `previous` defaults plus `--ps-opacity-next` (so incoming-from-right panels stay opaque while the receding panel is darkened in place).
 - **Cancelable before-events**: `panel-stack:push` and `panel-stack:pop` are dispatched before the state mutation. Calling `event.preventDefault()` aborts the navigation. `panel-stack:reset` is not cancelable (it's a recovery action).
 - **Initial panel resolution is forgiving**: `initial="x"` falls back to the first child if `x` doesn't match a `handle` — never throws or no-ops on mount.
+- **Focus moves before the outgoing panel becomes inert**: `push()` / `pop()` / `reset()` set the incoming panel to `current` first, call `#focus()`, then mark the outgoing panel `inert`. If the order is reversed, the still-focused trigger button gets stranded inside an inert subtree and the browser tries to scroll it back into view — which on a `panel-stack` (overflow: hidden + absolutely-positioned panels) silently shifts the host's nearest scrollable ancestor and breaks the layout. `focus({ preventScroll: true })` is the safety net for the same reason: even with the right order, browsers may attempt scroll-into-view, and `preventScroll` blocks it.
+- **Each push frame stores `{ handle, trigger }`**: `pop()` restores focus to the trigger element that opened the panel being popped — matching native back-button UX (browser, iOS UINavigationController). The trigger lives in the destination panel by construction, since that's where the user clicked it. `#focus(preferred)` falls back to `currentPanel.focus()` when the preferred element isn't connected (removed from the DOM, or push was called programmatically without a trigger), so there's no try/catch and no silent stranding. `push()` and `reset()` always go through the panel-focus fallback (no trigger to restore to).
 
 ## Elements
 
@@ -52,8 +54,7 @@ These are the public styling hooks. Consumers can target them via `stack-panel[s
 | Attribute | On | When it's set | Purpose |
 |---|---|---|---|
 | `state` | `<stack-panel>` | always | One of `current`, `previous`, `next`. CSS uses it to position and animate the panel. |
-| `inert` | `<stack-panel>` | when not `current` | Removes the panel from focus order and pointer events. |
-| `aria-hidden` | `<stack-panel>` | always | `false` on `current`, `true` otherwise. |
+| `inert` | `<stack-panel>` | when not `current` | Removes the panel from focus order, pointer events, and the accessibility tree. |
 | `role` | `<stack-panel>` | on connect | Set to `group` if not already specified by the author. |
 
 ## Events
@@ -68,14 +69,14 @@ All events bubble and are composed (cross shadow DOM boundaries).
 
 ## Public API
 
-- `stack.push(handle)` → `boolean`. `false` if the handle isn't found, equals the current handle, or the event was cancelled.
+- `stack.push(handle, trigger?)` → `boolean`. `false` if the handle isn't found, equals the current handle, or the event was cancelled. `trigger` is optional; when provided, `pop()` will restore focus to it. Declarative `data-action-stack-push` clicks pass the button automatically.
 - `stack.pop()` → `boolean`. `false` if at root or the event was cancelled.
 - `stack.reset()` → `void`. Collapses to root. Sets every non-root panel to `next`.
 - `stack.currentHandle` (getter) → `string | null`.
 - `stack.currentPanel` (getter) → `StackPanel | null`.
 - `stack.depth` (getter) → `number`. Root counts as 1.
 
-`StackPanel.focus(options)` is overridden to delegate to `[data-stack-focus]` first, then the first focusable descendant (`button`, `a[href]`, `input`, `select`, `textarea`, `[tabindex]:not([tabindex="-1"])`).
+`StackPanel.focus(options)` is overridden to delegate to `[data-stack-focus]` first, then the first focusable descendant (`button`, `a[href]`, `input`, `select`, `textarea`, `[tabindex]:not([tabindex="-1"])`). After every `push()` / `pop()` / `reset()`, `PanelStack` calls `#focus()` with `{ preventScroll: true }`. On `pop()` it prefers the trigger that opened the popped panel; on `push()` and `reset()` it focuses the new current panel. When the preferred trigger has been removed from the DOM, focus falls through to `currentPanel.focus()`. If the current panel has no focusable descendant either, focus stays where it was — the previously-focused element is then dropped onto the floor when its panel becomes inert (the browser moves focus to `<body>`).
 
 ## CSS Custom Properties
 
@@ -97,11 +98,12 @@ Defined on the `:root` of `src/panel-stack.css`. All consumer-overridable.
 | `--ps-scale-x-{state}` | `1` · `1.1` · `1.1` |
 | `--ps-scale-y-{state}` | `1` · `1` · `1` |
 | `--ps-blur-{state}` | `0px` · `2px` · `2px` |
-| `--ps-opacity-{state}` | `1` · `0.3` · `0.3` |
-| `--ps-brightness-{state}` | `1` · `1` · `1` |
+| `--ps-opacity-{state}` | `1` · `0.1` · `0.1` |
 | `--ps-z-index-{state}` | `1` · `0` · `2` |
 
-`effect="stack"` overrides the `previous` defaults to: translate `0%`, scale `0.95`, blur `1px`, opacity `1`, brightness `0.8`, z-index `-1`.
+`--ps-brightness-previous` exists separately (default `1`) and is the only brightness knob — `effect="stack"` overrides it to `0.5` to darken the receding panel. There's no brightness on `current` or `next` because nothing in the design dims them.
+
+`effect="stack"` overrides the `previous` defaults to: translate `0%`, scale `0.95`, blur `1px`, opacity `1`, brightness `0.5`, z-index `-1`. It also sets `--ps-opacity-next: 1`.
 
 ## Example Structure
 

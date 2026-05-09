@@ -17,7 +17,6 @@ panel-stack {
 	--ps-scale-y-current: 1;
 	--ps-blur-current: 0px;
 	--ps-opacity-current: 1;
-	--ps-brightness-current: 1;
 	--ps-z-index-current: 1;
 
 	--ps-translate-previous: calc(-100% - 50px);
@@ -33,7 +32,6 @@ panel-stack {
 	--ps-scale-y-next: 1;
 	--ps-blur-next: 2px;
 	--ps-opacity-next: 0.1;
-	--ps-brightness-next: 1;
 	--ps-z-index-next: 2;
 
 	position: relative;
@@ -56,6 +54,7 @@ panel-stack[effect='stack'] stack-panel {
 	--ps-brightness-previous: 0.5;
 	--ps-z-index-previous: -1;
 	--ps-inner-shadow-previous: inset 0 0 40px rgba(0, 0, 0, 0.5);
+	--ps-opacity-next: 1;
 }
 
 /* Inner shadow overlay — only meaningful for effect="stack" on previous panels.
@@ -94,8 +93,7 @@ stack-panel {
 stack-panel[state='current'] {
 	transform: translateX(var(--ps-translate-current)) scaleX(var(--ps-scale-x-current))
 		scaleY(var(--ps-scale-y-current));
-	filter: blur(var(--ps-blur-current)) opacity(var(--ps-opacity-current))
-		brightness(var(--ps-brightness-current));
+	filter: blur(var(--ps-blur-current)) opacity(var(--ps-opacity-current));
 	z-index: var(--ps-z-index-current);
 }
 
@@ -111,8 +109,7 @@ stack-panel[state='previous'] {
 stack-panel[state='next'] {
 	transform: translateX(var(--ps-translate-next)) scaleX(var(--ps-scale-x-next))
 		scaleY(var(--ps-scale-y-next));
-	filter: blur(var(--ps-blur-next)) opacity(var(--ps-opacity-next))
-		brightness(var(--ps-brightness-next));
+	filter: blur(var(--ps-blur-next)) opacity(var(--ps-opacity-next));
 	z-index: var(--ps-z-index-next);
 	pointer-events: none;
 }

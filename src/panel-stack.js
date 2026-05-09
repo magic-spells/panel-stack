@@ -19,7 +19,8 @@ import './panel-stack.css';
  *   <button data-action-stack-pop>Back</button>
  *
  * Programmatic API:
- *   stack.push('shop')
+ *   stack.push('shop')                 — focus moves to first focusable in shop
+ *   stack.push('shop', triggerEl)      — pop() will restore focus to triggerEl
  *   stack.pop()
  *   stack.reset()
  *
@@ -56,9 +57,12 @@ class PanelStack extends HTMLElement {
 	/**
 	 * Push a panel onto the stack.
 	 * @param {string} handle — handle of the target <stack-panel>
+	 * @param {Element|null} [trigger] — element that initiated the push. If
+	 *   provided, pop() will restore focus to it. Declarative triggers
+	 *   (data-action-stack-push) pass this automatically.
 	 * @returns {boolean} false if cancelled or invalid, true otherwise
 	 */
-	push(handle) {
+	push(handle, trigger = null) {
 		const _ = this;
 		const target = _.#panels.get(handle);
 		if (!target) return false;
@@ -70,11 +74,15 @@ class PanelStack extends HTMLElement {
 		if (!ok) return false;
 
 		const fromPanel = _.#panels.get(fromHandle);
-		_.#setPanelState(fromPanel, 'previous');
+		// Order matters: make the incoming panel non-inert and move focus to it
+		// BEFORE the outgoing panel becomes inert. Otherwise the still-focused
+		// trigger button gets stranded in an inert subtree and the browser tries
+		// to scroll it back into view, shifting the whole stack horizontally.
 		_.#setPanelState(target, 'current');
+		_.#focus();
+		_.#setPanelState(fromPanel, 'previous');
 
-		_.#stack.push(handle);
-		// _.#focusCurrent();
+		_.#stack.push({ handle, trigger });
 		return true;
 	}
 
@@ -86,20 +94,28 @@ class PanelStack extends HTMLElement {
 		const _ = this;
 		if (_.#stack.length <= 1) return false;
 
-		const fromHandle = _.#stack[_.#stack.length - 1];
-		const toHandle = _.#stack[_.#stack.length - 2];
+		const popped = _.#stack[_.#stack.length - 1];
+		const dest = _.#stack[_.#stack.length - 2];
 
-		const ok = _.#emit('pop', { fromHandle, toHandle, cancelable: true });
+		const ok = _.#emit('pop', {
+			fromHandle: popped.handle,
+			toHandle: dest.handle,
+			cancelable: true,
+		});
 		if (!ok) return false;
 
-		const fromPanel = _.#panels.get(fromHandle);
-		const toPanel = _.#panels.get(toHandle);
+		const fromPanel = _.#panels.get(popped.handle);
+		const toPanel = _.#panels.get(dest.handle);
 
-		_.#setPanelState(fromPanel, 'next');
 		_.#setPanelState(toPanel, 'current');
+		// Restore focus to the trigger that opened the panel we're leaving — it
+		// lives in the destination panel by construction. If it's gone (removed
+		// from the DOM, or never set), #focus falls back to the destination
+		// panel's first focusable.
+		_.#focus(popped.trigger);
+		_.#setPanelState(fromPanel, 'next');
 
 		_.#stack.pop();
-		// _.#focusCurrent();
 		return true;
 	}
 
@@ -111,18 +127,20 @@ class PanelStack extends HTMLElement {
 	reset() {
 		const _ = this;
 		if (_.#stack.length === 0) return;
-		const rootHandle = _.#stack[0];
-		_.#stack = [rootHandle];
+		const root = _.#stack[0];
+		_.#stack = [root];
+		const rootPanel = _.#panels.get(root.handle);
+		_.#setPanelState(rootPanel, 'current');
+		_.#focus();
 		for (const [handle, panel] of _.#panels) {
-			_.#setPanelState(panel, handle === rootHandle ? 'current' : 'next');
+			if (handle !== root.handle) _.#setPanelState(panel, 'next');
 		}
-		// _.#focusCurrent();
-		_.#emit('reset', { rootHandle });
+		_.#emit('reset', { rootHandle: root.handle });
 	}
 
 	/** Read-only: handle of the panel currently on top of the stack. */
 	get currentHandle() {
-		return this.#stack[this.#stack.length - 1] ?? null;
+		return this.#stack[this.#stack.length - 1]?.handle ?? null;
 	}
 
 	/** Read-only: the <stack-panel> element currently visible. */
@@ -157,7 +175,7 @@ class PanelStack extends HTMLElement {
 		const rootHandle =
 			requested && _.#panels.has(requested) ? requested : _.#panels.keys().next().value;
 
-		_.#stack = [rootHandle];
+		_.#stack = [{ handle: rootHandle, trigger: null }];
 		for (const [handle, panel] of _.#panels) {
 			_.#setPanelState(panel, handle === rootHandle ? 'current' : 'next');
 		}
@@ -171,7 +189,7 @@ class PanelStack extends HTMLElement {
 				const target = pushTrigger.getAttribute('target');
 				if (target) {
 					event.preventDefault();
-					_.push(target);
+					_.push(target, pushTrigger);
 				}
 				return;
 			}
@@ -187,12 +205,30 @@ class PanelStack extends HTMLElement {
 	#setPanelState(panel, state) {
 		if (!panel) return;
 		panel.setAttribute('state', state);
+		// `inert` alone is the right primitive here: it removes the panel from
+		// the focus order AND from the accessibility tree. Adding aria-hidden on
+		// top of inert is redundant and Chrome will throw "Blocked aria-hidden
+		// because descendant retained focus" warnings if the focus handoff and
+		// the attribute write race each other.
 		if (state === 'current') {
 			panel.removeAttribute('inert');
-			panel.setAttribute('aria-hidden', 'false');
 		} else {
 			panel.setAttribute('inert', '');
-			panel.setAttribute('aria-hidden', 'true');
+		}
+	}
+
+	#focus(preferred = null) {
+		// Prefer an explicit element (the trigger that opened the leaving panel,
+		// for pop) when it's still in the DOM; otherwise focus the current panel,
+		// which delegates to [data-stack-focus] or the first focusable child.
+		// preventScroll is critical: without it the browser tries to scroll the
+		// newly-focused element into view, which on a panel-stack (overflow:
+		// hidden + absolutely-positioned panels) ends up scrolling the host's
+		// nearest scrollable ancestor and shifts the whole layout sideways.
+		if (preferred?.isConnected) {
+			preferred.focus({ preventScroll: true });
+		} else {
+			this.currentPanel?.focus({ preventScroll: true });
 		}
 	}
 

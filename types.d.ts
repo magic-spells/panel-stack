@@ -2,7 +2,7 @@ export class PanelStack extends HTMLElement {
 	readonly currentHandle: string | null;
 	readonly currentPanel: StackPanel | null;
 	readonly depth: number;
-	push(handle: string): boolean;
+	push(handle: string, trigger?: Element | null): boolean;
 	pop(): boolean;
 	reset(): void;
 }

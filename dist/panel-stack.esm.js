@@ -18,7 +18,8 @@
 *   <button data-action-stack-pop>Back</button>
 *
 * Programmatic API:
-*   stack.push('shop')
+*   stack.push('shop')                 — focus moves to first focusable in shop
+*   stack.push('shop', triggerEl)      — pop() will restore focus to triggerEl
 *   stack.pop()
 *   stack.reset()
 *
@@ -50,9 +51,12 @@ var PanelStack = class extends HTMLElement {
 	/**
 	* Push a panel onto the stack.
 	* @param {string} handle — handle of the target <stack-panel>
+	* @param {Element|null} [trigger] — element that initiated the push. If
+	*   provided, pop() will restore focus to it. Declarative triggers
+	*   (data-action-stack-push) pass this automatically.
 	* @returns {boolean} false if cancelled or invalid, true otherwise
 	*/
-	push(handle) {
+	push(handle, trigger = null) {
 		const _ = this;
 		const target = _.#panels.get(handle);
 		if (!target) return false;
@@ -64,9 +68,13 @@ var PanelStack = class extends HTMLElement {
 			cancelable: true
 		})) return false;
 		const fromPanel = _.#panels.get(fromHandle);
-		_.#setPanelState(fromPanel, "previous");
 		_.#setPanelState(target, "current");
-		_.#stack.push(handle);
+		_.#focus();
+		_.#setPanelState(fromPanel, "previous");
+		_.#stack.push({
+			handle,
+			trigger
+		});
 		return true;
 	}
 	/**
@@ -76,17 +84,18 @@ var PanelStack = class extends HTMLElement {
 	pop() {
 		const _ = this;
 		if (_.#stack.length <= 1) return false;
-		const fromHandle = _.#stack[_.#stack.length - 1];
-		const toHandle = _.#stack[_.#stack.length - 2];
+		const popped = _.#stack[_.#stack.length - 1];
+		const dest = _.#stack[_.#stack.length - 2];
 		if (!_.#emit("pop", {
-			fromHandle,
-			toHandle,
+			fromHandle: popped.handle,
+			toHandle: dest.handle,
 			cancelable: true
 		})) return false;
-		const fromPanel = _.#panels.get(fromHandle);
-		const toPanel = _.#panels.get(toHandle);
-		_.#setPanelState(fromPanel, "next");
+		const fromPanel = _.#panels.get(popped.handle);
+		const toPanel = _.#panels.get(dest.handle);
 		_.#setPanelState(toPanel, "current");
+		_.#focus(popped.trigger);
+		_.#setPanelState(fromPanel, "next");
 		_.#stack.pop();
 		return true;
 	}
@@ -98,14 +107,17 @@ var PanelStack = class extends HTMLElement {
 	reset() {
 		const _ = this;
 		if (_.#stack.length === 0) return;
-		const rootHandle = _.#stack[0];
-		_.#stack = [rootHandle];
-		for (const [handle, panel] of _.#panels) _.#setPanelState(panel, handle === rootHandle ? "current" : "next");
-		_.#emit("reset", { rootHandle });
+		const root = _.#stack[0];
+		_.#stack = [root];
+		const rootPanel = _.#panels.get(root.handle);
+		_.#setPanelState(rootPanel, "current");
+		_.#focus();
+		for (const [handle, panel] of _.#panels) if (handle !== root.handle) _.#setPanelState(panel, "next");
+		_.#emit("reset", { rootHandle: root.handle });
 	}
 	/** Read-only: handle of the panel currently on top of the stack. */
 	get currentHandle() {
-		return this.#stack[this.#stack.length - 1] ?? null;
+		return this.#stack[this.#stack.length - 1]?.handle ?? null;
 	}
 	/** Read-only: the <stack-panel> element currently visible. */
 	get currentPanel() {
@@ -133,7 +145,10 @@ var PanelStack = class extends HTMLElement {
 		if (_.#panels.size === 0) return;
 		const requested = _.getAttribute("initial");
 		const rootHandle = requested && _.#panels.has(requested) ? requested : _.#panels.keys().next().value;
-		_.#stack = [rootHandle];
+		_.#stack = [{
+			handle: rootHandle,
+			trigger: null
+		}];
 		for (const [handle, panel] of _.#panels) _.#setPanelState(panel, handle === rootHandle ? "current" : "next");
 	}
 	#attachListeners() {
@@ -144,7 +159,7 @@ var PanelStack = class extends HTMLElement {
 				const target = pushTrigger.getAttribute("target");
 				if (target) {
 					event.preventDefault();
-					_.push(target);
+					_.push(target, pushTrigger);
 				}
 				return;
 			}
@@ -159,13 +174,12 @@ var PanelStack = class extends HTMLElement {
 	#setPanelState(panel, state) {
 		if (!panel) return;
 		panel.setAttribute("state", state);
-		if (state === "current") {
-			panel.removeAttribute("inert");
-			panel.setAttribute("aria-hidden", "false");
-		} else {
-			panel.setAttribute("inert", "");
-			panel.setAttribute("aria-hidden", "true");
-		}
+		if (state === "current") panel.removeAttribute("inert");
+		else panel.setAttribute("inert", "");
+	}
+	#focus(preferred = null) {
+		if (preferred?.isConnected) preferred.focus({ preventScroll: true });
+		else this.currentPanel?.focus({ preventScroll: true });
 	}
 	#emit(name, options = {}) {
 		const { cancelable = false, ...detail } = options;
