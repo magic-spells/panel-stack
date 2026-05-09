@@ -84,15 +84,15 @@ class PanelStack extends HTMLElement {
 		if (!ok) return false;
 
 		const fromPanel = _.#panels.get(fromHandle);
-		// Order matters: make the incoming panel non-inert and move focus to it
-		// BEFORE the outgoing panel becomes inert. Otherwise the still-focused
-		// trigger button gets stranded in an inert subtree and the browser tries
-		// to scroll it back into view, shifting the whole stack horizontally.
+		// Order matters: make the incoming panel non-inert and update #stack
+		// before focus falls through currentPanel. Then move focus before the
+		// outgoing panel becomes inert, so the still-focused trigger button does
+		// not get stranded in an inert subtree.
 		_.#setPanelState(target, 'current');
+		_.#stack.push({ handle, trigger });
 		_.#focus();
 		_.#setPanelState(fromPanel, 'previous');
 
-		_.#stack.push({ handle, trigger });
 		return true;
 	}
 
@@ -120,10 +120,10 @@ class PanelStack extends HTMLElement {
 		// lives in the destination panel by construction. If it's gone (removed
 		// from the DOM, or never set), #focus falls back to the destination
 		// panel's first focusable.
+		_.#stack.pop();
 		_.#focus(popped.trigger);
 		_.#setPanelState(fromPanel, 'next');
 
-		_.#stack.pop();
 		return true;
 	}
 

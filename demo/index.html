@@ -1725,8 +1725,9 @@ npm i @magic-spells/panel-stack
 				<h2>Listen <em>in</em>.</h2>
 				<p class="demo-desc">
 					Every push, pop, and reset fires a bubbling, composed <code>CustomEvent</code>.
-					The before-events are cancelable — call <code>e.preventDefault()</code> in a
-					handler to abort the navigation. Try clicking around the panel; the log on the
+					Push events are cancelable — call <code>e.preventDefault()</code> in a
+					<code>panel-stack:push</code> handler to abort navigation. Try clicking around the panel;
+					the log on the
 					right captures every event.
 				</p>
 				<div class="demo-stage">
@@ -1864,7 +1865,7 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 						<div><code>push(handle)</code></div><div>boolean</div><div>Slide to the named panel · returns false if cancelled or unknown</div>
 					</div>
 					<div class="ref-row">
-						<div><code>pop()</code></div><div>boolean</div><div>Pop the top panel · false if at root or cancelled</div>
+						<div><code>pop()</code></div><div>boolean</div><div>Pop the top panel · false if at root</div>
 					</div>
 					<div class="ref-row">
 						<div><code>reset()</code></div><div>void</div><div>Collapse the stack to root</div>
@@ -1889,7 +1890,7 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 						<div><code>panel-stack:push</code></div><div>yes</div><div><code>{ fromHandle, toHandle }</code></div>
 					</div>
 					<div class="ref-row">
-						<div><code>panel-stack:pop</code></div><div>yes</div><div><code>{ fromHandle, toHandle }</code></div>
+						<div><code>panel-stack:pop</code></div><div>no</div><div><code>{ fromHandle, toHandle }</code></div>
 					</div>
 					<div class="ref-row">
 						<div><code>panel-stack:reset</code></div><div>—</div><div><code>{ rootHandle }</code></div>

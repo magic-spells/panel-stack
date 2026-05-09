@@ -25,7 +25,7 @@
 *
 * Events (all bubble + composed):
 *   panel-stack:push   → detail { fromHandle, toHandle }   cancelable
-*   panel-stack:pop    → detail { fromHandle, toHandle }   cancelable
+*   panel-stack:pop    → detail { fromHandle, toHandle }
 *   panel-stack:reset  → detail { rootHandle }
 *
 * Keyboard:
@@ -81,34 +81,33 @@ var PanelStack = class extends HTMLElement {
 		})) return false;
 		const fromPanel = _.#panels.get(fromHandle);
 		_.#setPanelState(target, "current");
-		_.#focus();
-		_.#setPanelState(fromPanel, "previous");
 		_.#stack.push({
 			handle,
 			trigger
 		});
+		_.#focus();
+		_.#setPanelState(fromPanel, "previous");
 		return true;
 	}
 	/**
 	* Pop the top panel off the stack.
-	* @returns {boolean} false if at root or cancelled, true otherwise
+	* @returns {boolean} false if at root, true otherwise
 	*/
 	pop() {
 		const _ = this;
 		if (_.#stack.length <= 1) return false;
 		const popped = _.#stack[_.#stack.length - 1];
 		const dest = _.#stack[_.#stack.length - 2];
-		if (!_.#emit("pop", {
+		_.#emit("pop", {
 			fromHandle: popped.handle,
-			toHandle: dest.handle,
-			cancelable: true
-		})) return false;
+			toHandle: dest.handle
+		});
 		const fromPanel = _.#panels.get(popped.handle);
 		const toPanel = _.#panels.get(dest.handle);
 		_.#setPanelState(toPanel, "current");
+		_.#stack.pop();
 		_.#focus(popped.trigger);
 		_.#setPanelState(fromPanel, "next");
-		_.#stack.pop();
 		return true;
 	}
 	/**

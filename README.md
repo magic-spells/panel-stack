@@ -64,7 +64,7 @@ stack.depth;           // 2
 
 ## Events
 
-All bubble + composed; the before-events are cancelable.
+All events bubble + composed. `panel-stack:push` is cancelable.
 
 ```js
 stack.addEventListener('panel-stack:push', (e) => {
@@ -167,7 +167,7 @@ Pressing **Escape** while focus is inside the stack pops one level — but only 
 
 Drill into `settings`, hit Esc → goes back to `root`, dialog stays open. Hit Esc again → dialog closes. No coordination needed between the two.
 
-If a focused input already consumed Esc (e.g., `<input type="search">` clearing its value), the stack stays put. Wizards with unsaved work can cancel the pop via `panel-stack:pop`'s `preventDefault()`.
+If a focused input already consumed Esc (e.g., `<input type="search">` clearing its value), the stack stays put. Wizards with unsaved work should confirm or block before calling `pop()`.
 
 ## License
 
