@@ -27,12 +27,20 @@
 *   panel-stack:push   → detail { fromHandle, toHandle }   cancelable
 *   panel-stack:pop    → detail { fromHandle, toHandle }   cancelable
 *   panel-stack:reset  → detail { rootHandle }
+*
+* Keyboard:
+*   Escape pops one level when depth > 1. At root the keydown bubbles
+*   untouched, so a wrapping <dialog> (or any ancestor Esc handler) closes
+*   naturally.
 */
 var PanelStack = class extends HTMLElement {
 	#stack = [];
 	#panels = /* @__PURE__ */ new Map();
 	#initialized = false;
-	#handlers = { click: null };
+	#handlers = {
+		click: null,
+		keydown: null
+	};
 	connectedCallback() {
 		const _ = this;
 		if (_.#initialized) return;
@@ -46,6 +54,10 @@ var PanelStack = class extends HTMLElement {
 		if (_.#handlers.click) {
 			_.removeEventListener("click", _.#handlers.click);
 			_.#handlers.click = null;
+		}
+		if (_.#handlers.keydown) {
+			_.removeEventListener("keydown", _.#handlers.keydown);
+			_.#handlers.keydown = null;
 		}
 	}
 	/**
@@ -170,6 +182,15 @@ var PanelStack = class extends HTMLElement {
 			}
 		};
 		_.addEventListener("click", _.#handlers.click);
+		_.#handlers.keydown = (event) => {
+			if (event.key !== "Escape") return;
+			if (event.defaultPrevented) return;
+			if (_.depth <= 1) return;
+			event.preventDefault();
+			event.stopPropagation();
+			_.pop();
+		};
+		_.addEventListener("keydown", _.#handlers.keydown);
 	}
 	#setPanelState(panel, state) {
 		if (!panel) return;

@@ -31,6 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Initial panel resolution is forgiving**: `initial="x"` falls back to the first child if `x` doesn't match a `handle` — never throws or no-ops on mount.
 - **Focus moves before the outgoing panel becomes inert**: `push()` / `pop()` / `reset()` set the incoming panel to `current` first, call `#focus()`, then mark the outgoing panel `inert`. If the order is reversed, the still-focused trigger button gets stranded inside an inert subtree and the browser tries to scroll it back into view — which on a `panel-stack` (overflow: hidden + absolutely-positioned panels) silently shifts the host's nearest scrollable ancestor and breaks the layout. `focus({ preventScroll: true })` is the safety net for the same reason: even with the right order, browsers may attempt scroll-into-view, and `preventScroll` blocks it.
 - **Each push frame stores `{ handle, trigger }`**: `pop()` restores focus to the trigger element that opened the panel being popped — matching native back-button UX (browser, iOS UINavigationController). The trigger lives in the destination panel by construction, since that's where the user clicked it. `#focus(preferred)` falls back to `currentPanel.focus()` when the preferred element isn't connected (removed from the DOM, or push was called programmatically without a trigger), so there's no try/catch and no silent stranding. `push()` and `reset()` always go through the panel-focus fallback (no trigger to restore to).
+- **Escape pops one level when `depth > 1`; at root the event bubbles untouched**: This composes correctly with native `<dialog>` and any ancestor Esc handler — drilling three levels deep into a panel-stack inside a dialog, hitting Esc once steps back one level (dialog stays open); at root, Esc closes the dialog as normal. No coordination required between the two. The handler is bound on the host (not on `document`), so Esc only navigates the stack when focus is inside the stack. Bails on `event.defaultPrevented` so inputs that consumed Esc first (search clearing, combobox closing) keep working. Wizards with unsaved work can cancel the resulting `pop()` via `panel-stack:pop`'s `preventDefault()`.
 
 ## Elements
 
@@ -77,6 +78,8 @@ All events bubble and are composed (cross shadow DOM boundaries).
 - `stack.depth` (getter) → `number`. Root counts as 1.
 
 `StackPanel.focus(options)` is overridden to delegate to `[data-stack-focus]` first, then the first focusable descendant (`button`, `a[href]`, `input`, `select`, `textarea`, `[tabindex]:not([tabindex="-1"])`). After every `push()` / `pop()` / `reset()`, `PanelStack` calls `#focus()` with `{ preventScroll: true }`. On `pop()` it prefers the trigger that opened the popped panel; on `push()` and `reset()` it focuses the new current panel. When the preferred trigger has been removed from the DOM, focus falls through to `currentPanel.focus()`. If the current panel has no focusable descendant either, focus stays where it was — the previously-focused element is then dropped onto the floor when its panel becomes inert (the browser moves focus to `<body>`).
+
+Escape (when focused inside the stack) calls `pop()` while `depth > 1` and consumes the keydown. At root, Esc bubbles untouched so a wrapping `<dialog>` closes as normal.
 
 ## CSS Custom Properties
 

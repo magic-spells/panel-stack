@@ -152,6 +152,23 @@ On `pop()`, focus is restored to the element that originally pushed the panel yo
 
 Inactive panels get `inert` so they can't trap tab navigation or screen reader focus.
 
+## Keyboard
+
+Pressing **Escape** while focus is inside the stack pops one level — but only when there's somewhere to go back to. At the root panel, Esc bubbles untouched so a wrapping `<dialog>` closes as normal:
+
+```html
+<dialog>
+  <panel-stack>
+    <stack-panel handle="root">…</stack-panel>
+    <stack-panel handle="settings">…</stack-panel>
+  </panel-stack>
+</dialog>
+```
+
+Drill into `settings`, hit Esc → goes back to `root`, dialog stays open. Hit Esc again → dialog closes. No coordination needed between the two.
+
+If a focused input already consumed Esc (e.g., `<input type="search">` clearing its value), the stack stays put. Wizards with unsaved work can cancel the pop via `panel-stack:pop`'s `preventDefault()`.
+
 ## License
 
 MIT

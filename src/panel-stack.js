@@ -28,6 +28,11 @@ import './panel-stack.css';
  *   panel-stack:push   → detail { fromHandle, toHandle }   cancelable
  *   panel-stack:pop    → detail { fromHandle, toHandle }   cancelable
  *   panel-stack:reset  → detail { rootHandle }
+ *
+ * Keyboard:
+ *   Escape pops one level when depth > 1. At root the keydown bubbles
+ *   untouched, so a wrapping <dialog> (or any ancestor Esc handler) closes
+ *   naturally.
  */
 class PanelStack extends HTMLElement {
 	#stack = [];
@@ -35,6 +40,7 @@ class PanelStack extends HTMLElement {
 	#initialized = false;
 	#handlers = {
 		click: null,
+		keydown: null,
 	};
 
 	connectedCallback() {
@@ -51,6 +57,10 @@ class PanelStack extends HTMLElement {
 		if (_.#handlers.click) {
 			_.removeEventListener('click', _.#handlers.click);
 			_.#handlers.click = null;
+		}
+		if (_.#handlers.keydown) {
+			_.removeEventListener('keydown', _.#handlers.keydown);
+			_.#handlers.keydown = null;
 		}
 	}
 
@@ -200,6 +210,21 @@ class PanelStack extends HTMLElement {
 			}
 		};
 		_.addEventListener('click', _.#handlers.click);
+
+		_.#handlers.keydown = (event) => {
+			if (event.key !== 'Escape') return;
+			// Respect inputs that consumed Esc first (e.g., <input type="search">
+			// clearing its value, comboboxes closing their popover).
+			if (event.defaultPrevented) return;
+			// At root, do nothing — let the keydown bubble so a parent <dialog>
+			// (or any other ancestor Esc handler) closes as normal. Only when
+			// there's somewhere to go back to do we claim the event.
+			if (_.depth <= 1) return;
+			event.preventDefault();
+			event.stopPropagation();
+			_.pop();
+		};
+		_.addEventListener('keydown', _.#handlers.keydown);
 	}
 
 	#setPanelState(panel, state) {
