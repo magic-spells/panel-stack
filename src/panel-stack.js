@@ -26,7 +26,7 @@ import './panel-stack.css';
  *
  * Events (all bubble + composed):
  *   panel-stack:push   → detail { fromHandle, toHandle }   cancelable
- *   panel-stack:pop    → detail { fromHandle, toHandle }   cancelable
+ *   panel-stack:pop    → detail { fromHandle, toHandle }
  *   panel-stack:reset  → detail { rootHandle }
  *
  * Keyboard:
@@ -98,7 +98,7 @@ class PanelStack extends HTMLElement {
 
 	/**
 	 * Pop the top panel off the stack.
-	 * @returns {boolean} false if at root or cancelled, true otherwise
+	 * @returns {boolean} false if at root, true otherwise
 	 */
 	pop() {
 		const _ = this;
@@ -107,12 +107,10 @@ class PanelStack extends HTMLElement {
 		const popped = _.#stack[_.#stack.length - 1];
 		const dest = _.#stack[_.#stack.length - 2];
 
-		const ok = _.#emit('pop', {
+		_.#emit('pop', {
 			fromHandle: popped.handle,
 			toHandle: dest.handle,
-			cancelable: true,
 		});
-		if (!ok) return false;
 
 		const fromPanel = _.#panels.get(popped.handle);
 		const toPanel = _.#panels.get(dest.handle);
