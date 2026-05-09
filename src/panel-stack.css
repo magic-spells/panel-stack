@@ -41,6 +41,11 @@ panel-stack {
 	overflow: hidden;
 	border-radius: inherit;
 	perspective: var(--ps-perspective);
+	/* Disable double-tap-to-zoom inside the stack so taps fire `click`
+	   immediately. Without this, mobile browsers (notably iOS Safari) wait
+	   ~50–300ms after touchend before dispatching click, which makes the
+	   back/push animation feel laggy. Pinch-zoom on the page still works. */
+	touch-action: manipulation;
 }
 
 /* effect="stack" — previous panel shrinks, blurs, and darkens behind the
