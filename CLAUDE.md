@@ -27,11 +27,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`border-radius: inherit` on both elements**: A wrapper with `border-radius` + `overflow: hidden` rounds the panels automatically. No `--ps-radius` needed.
 - **`prefers-reduced-motion` honored in the CSS layer**: Transitions collapse to `none` for users who request reduced motion — handled in `src/panel-stack.css`, not JS.
 - **Per-state CSS custom properties (translate / scale-x / scale-y / blur / opacity / z-index)**: Each state (`current` / `previous` / `next`) gets its own value for each axis. Override one state without touching the others. Brightness is the exception — only `--ps-brightness-previous` exists, since dimming the current or next panel isn't part of any stock effect. `effect="stack"` overrides the `previous` defaults plus `--ps-opacity-next` (so incoming-from-right panels stay opaque while the receding panel is darkened in place).
-- **Cancelable before-events**: `panel-stack:push` and `panel-stack:pop` are dispatched before the state mutation. Calling `event.preventDefault()` aborts the navigation. `panel-stack:reset` is not cancelable (it's a recovery action).
+- **Cancelable before-events**: `panel-stack:push` is dispatched before the state mutation; calling `event.preventDefault()` aborts the navigation. `panel-stack:pop` and `panel-stack:reset` are not cancelable.
 - **Initial panel resolution is forgiving**: `initial="x"` falls back to the first child if `x` doesn't match a `handle` — never throws or no-ops on mount.
 - **Focus moves before the outgoing panel becomes inert**: `push()` / `pop()` / `reset()` set the incoming panel to `current` first, call `#focus()`, then mark the outgoing panel `inert`. If the order is reversed, the still-focused trigger button gets stranded inside an inert subtree and the browser tries to scroll it back into view — which on a `panel-stack` (overflow: hidden + absolutely-positioned panels) silently shifts the host's nearest scrollable ancestor and breaks the layout. `focus({ preventScroll: true })` is the safety net for the same reason: even with the right order, browsers may attempt scroll-into-view, and `preventScroll` blocks it.
 - **Each push frame stores `{ handle, trigger }`**: `pop()` restores focus to the trigger element that opened the panel being popped — matching native back-button UX (browser, iOS UINavigationController). The trigger lives in the destination panel by construction, since that's where the user clicked it. `#focus(preferred)` falls back to `currentPanel.focus()` when the preferred element isn't connected (removed from the DOM, or push was called programmatically without a trigger), so there's no try/catch and no silent stranding. `push()` and `reset()` always go through the panel-focus fallback (no trigger to restore to).
-- **Escape pops one level when `depth > 1`; at root the event bubbles untouched**: This composes correctly with native `<dialog>` and any ancestor Esc handler — drilling three levels deep into a panel-stack inside a dialog, hitting Esc once steps back one level (dialog stays open); at root, Esc closes the dialog as normal. No coordination required between the two. The handler is bound on the host (not on `document`), so Esc only navigates the stack when focus is inside the stack. Bails on `event.defaultPrevented` so inputs that consumed Esc first (search clearing, combobox closing) keep working. Wizards with unsaved work can cancel the resulting `pop()` via `panel-stack:pop`'s `preventDefault()`.
+- **Escape pops one level when `depth > 1`; at root the event bubbles untouched**: This composes correctly with native `<dialog>` and any ancestor Esc handler — drilling three levels deep into a panel-stack inside a dialog, hitting Esc once steps back one level (dialog stays open); at root, Esc closes the dialog as normal. No coordination required between the two. The handler is bound on the host (not on `document`), so Esc only navigates the stack when focus is inside the stack. Bails on `event.defaultPrevented` so inputs that consumed Esc first (search clearing, combobox closing) keep working.
 
 ## Elements
 
@@ -65,13 +65,13 @@ All events bubble and are composed (cross shadow DOM boundaries).
 | Event | Detail | Cancelable | Description |
 |---|---|---|---|
 | `panel-stack:push` | `{ fromHandle, toHandle }` | yes | Dispatched before `push()` mutates state. `preventDefault()` aborts the navigation. `fromHandle` is `null` only if `push()` is called before any panel is current. |
-| `panel-stack:pop` | `{ fromHandle, toHandle }` | yes | Dispatched before `pop()` mutates state. `preventDefault()` aborts. |
+| `panel-stack:pop` | `{ fromHandle, toHandle }` | no | Dispatched before `pop()` mutates state. |
 | `panel-stack:reset` | `{ rootHandle }` | no | Dispatched after `reset()` collapses the stack to root. |
 
 ## Public API
 
 - `stack.push(handle, trigger?)` → `boolean`. `false` if the handle isn't found, equals the current handle, or the event was cancelled. `trigger` is optional; when provided, `pop()` will restore focus to it. Declarative `data-action-stack-push` clicks pass the button automatically.
-- `stack.pop()` → `boolean`. `false` if at root or the event was cancelled.
+- `stack.pop()` → `boolean`. `false` if at root.
 - `stack.reset()` → `void`. Collapses to root. Sets every non-root panel to `next`.
 - `stack.currentHandle` (getter) → `string | null`.
 - `stack.currentPanel` (getter) → `StackPanel | null`.
