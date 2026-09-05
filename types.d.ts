@@ -31,5 +31,8 @@ declare global {
 		'panel-stack:reset': CustomEvent<{
 			rootHandle: string;
 		}>;
+		'panel-stack:change': CustomEvent<{
+			handle: string;
+		}>;
 	}
 }

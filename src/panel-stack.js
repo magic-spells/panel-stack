@@ -34,6 +34,7 @@ import './panel-stack.css';
  *   panel-stack:push   → detail { fromHandle, toHandle }   cancelable
  *   panel-stack:pop    → detail { fromHandle, toHandle }
  *   panel-stack:reset  → detail { rootHandle }
+ *   panel-stack:change → detail { handle }   after the stack settles
  *
  * Keyboard:
  *   Escape pops one level when depth > 1. At root the keydown bubbles
@@ -48,6 +49,9 @@ class PanelStack extends HTMLElement {
 	// value doesn't loop back through attributeChangedCallback as a navigation.
 	#reflecting = false;
 	#observer = null;
+	// Handle the last panel-stack:change reported. Seeded (silently) at init so
+	// the first real navigation is the first event.
+	#lastChange = null;
 	#handlers = {
 		click: null,
 		keydown: null,
@@ -59,10 +63,18 @@ class PanelStack extends HTMLElement {
 
 	connectedCallback() {
 		const _ = this;
-		if (_.#initialized) return;
-		_.#initialized = true;
-		_.#queryDOM();
-		_.#initState();
+		if (!_.#initialized) {
+			_.#initialized = true;
+			_.#queryDOM();
+			_.#initState();
+		} else {
+			// Reconnected after a DOM move (a keyed patcher can relocate the host).
+			// The stack state survives; re-index in case children changed while we
+			// were detached.
+			_.#rescan();
+		}
+		// Always (re-)attach: disconnectedCallback tore the listeners and the
+		// observer down, and without this the element is inert after a move.
 		_.#attachListeners();
 	}
 
@@ -111,6 +123,11 @@ class PanelStack extends HTMLElement {
 
 		const fromHandle = _.currentHandle;
 		if (fromHandle === handle) return false;
+
+		// Already in the ancestry: pushing again would duplicate the frame and
+		// leave two stack entries pointing at one panel. Go back to the existing
+		// frame instead — same result the `current` attribute gives.
+		if (_.#stack.some((frame) => frame.handle === handle)) return _.#popTo(handle);
 
 		const ok = _.#emit('push', { fromHandle, toHandle: handle, cancelable: true });
 		if (!ok) return false;
@@ -177,8 +194,9 @@ class PanelStack extends HTMLElement {
 		for (const [handle, panel] of _.#panels) {
 			if (handle !== root.handle) _.#setPanelState(panel, 'next');
 		}
-		_.#reflect();
+		// reset first, then reflect — so panel-stack:change is last here too.
 		_.#emit('reset', { rootHandle: root.handle });
+		_.#reflect();
 	}
 
 	/** Read-only: handle of the panel currently on top of the stack. */
@@ -248,6 +266,9 @@ class PanelStack extends HTMLElement {
 			if (handle === currentHandle) _.#setPanelState(panel, 'current');
 			else _.#setPanelState(panel, handle === rootHandle ? 'previous' : 'next');
 		}
+		// Seed the change baseline so mounting — authored `current` included —
+		// stays silent.
+		_.#lastChange = currentHandle;
 		_.#reflect();
 	}
 
@@ -260,10 +281,38 @@ class PanelStack extends HTMLElement {
 	#reflect() {
 		const _ = this;
 		const handle = _.currentHandle;
-		if (handle == null || _.getAttribute('current') === handle) return;
-		_.#reflecting = true;
-		_.setAttribute('current', handle);
-		_.#reflecting = false;
+		if (handle == null) return;
+		if (_.getAttribute('current') !== handle) {
+			_.#reflecting = true;
+			try {
+				_.setAttribute('current', handle);
+			} finally {
+				_.#reflecting = false;
+			}
+		}
+		// One post-mutation event for wrappers: push/pop fire *before* the stack
+		// moves, so their detail is the only safe read there. This fires after,
+		// carries the settled handle, and covers every source including the
+		// DOM-driven ancestor fallback.
+		if (handle !== _.#lastChange) {
+			_.#lastChange = handle;
+			_.#emit('change', { handle });
+		}
+	}
+
+	/**
+	 * Pop until `handle` is current. One panel-stack:pop per level.
+	 * @param {string} handle — a handle already in the stack
+	 * @returns {boolean} true if the stack ended up there
+	 */
+	#popTo(handle) {
+		const _ = this;
+		const index = _.#stack.findIndex((frame) => frame.handle === handle);
+		if (index === -1) return false;
+		while (_.#stack.length - 1 > index) {
+			if (!_.pop()) break;
+		}
+		return _.currentHandle === handle;
 	}
 
 	/**
@@ -286,11 +335,8 @@ class PanelStack extends HTMLElement {
 
 		if (handle === _.#stack[0]?.handle) return _.reset();
 
-		const index = _.#stack.findIndex((frame) => frame.handle === handle);
-		if (index !== -1) {
-			while (_.#stack.length - 1 > index) {
-				if (!_.pop()) break;
-			}
+		if (_.#stack.some((frame) => frame.handle === handle)) {
+			_.#popTo(handle);
 			return;
 		}
 
@@ -310,26 +356,17 @@ class PanelStack extends HTMLElement {
 		const before = _.currentHandle;
 		_.#queryDOM();
 
-		for (const [handle, panel] of _.#panels) {
-			if (!panel.hasAttribute('state')) {
-				_.#setPanelState(panel, handle === before ? 'current' : 'next');
-			}
-		}
-
-		const survivors = _.#stack.filter((frame) => _.#panels.has(frame.handle));
-		if (survivors.length === _.#stack.length) {
-			if (reflect) _.#reflect();
-			return;
-		}
-
-		_.#stack = survivors;
+		_.#stack = _.#stack.filter((frame) => _.#panels.has(frame.handle));
 		if (_.#stack.length === 0 && _.#panels.size > 0) {
 			_.#stack = [{ handle: _.#panels.keys().next().value, trigger: null }];
 		}
 
 		const currentHandle = _.currentHandle;
+		const inStack = new Set(_.#stack.map((frame) => frame.handle));
+
 		if (currentHandle !== before) {
-			const inStack = new Set(_.#stack.map((frame) => frame.handle));
+			// The current panel was removed — fall back to the nearest surviving
+			// ancestor and rebuild every state from the pruned stack.
 			_.#setPanelState(_.#panels.get(currentHandle), 'current');
 			for (const [handle, panel] of _.#panels) {
 				if (handle !== currentHandle) {
@@ -337,6 +374,16 @@ class PanelStack extends HTMLElement {
 				}
 			}
 			_.#focus();
+		} else {
+			// Park anything the stack doesn't know about. Keying on stack
+			// membership (not on a missing `state` attribute) also catches a panel
+			// that was detached while current or previous and re-appended with its
+			// old attributes still on it.
+			for (const [handle, panel] of _.#panels) {
+				if (!inStack.has(handle) && panel.getAttribute('state') !== 'next') {
+					_.#setPanelState(panel, 'next');
+				}
+			}
 		}
 		if (reflect) _.#reflect();
 	}

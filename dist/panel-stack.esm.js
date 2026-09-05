@@ -33,6 +33,7 @@
 *   panel-stack:push   → detail { fromHandle, toHandle }   cancelable
 *   panel-stack:pop    → detail { fromHandle, toHandle }
 *   panel-stack:reset  → detail { rootHandle }
+*   panel-stack:change → detail { handle }   after the stack settles
 *
 * Keyboard:
 *   Escape pops one level when depth > 1. At root the keydown bubbles
@@ -45,6 +46,7 @@ var PanelStack = class extends HTMLElement {
 	#initialized = false;
 	#reflecting = false;
 	#observer = null;
+	#lastChange = null;
 	#handlers = {
 		click: null,
 		keydown: null
@@ -54,10 +56,11 @@ var PanelStack = class extends HTMLElement {
 	}
 	connectedCallback() {
 		const _ = this;
-		if (_.#initialized) return;
-		_.#initialized = true;
-		_.#queryDOM();
-		_.#initState();
+		if (!_.#initialized) {
+			_.#initialized = true;
+			_.#queryDOM();
+			_.#initState();
+		} else _.#rescan();
 		_.#attachListeners();
 	}
 	/**
@@ -100,6 +103,7 @@ var PanelStack = class extends HTMLElement {
 		if (!target) return false;
 		const fromHandle = _.currentHandle;
 		if (fromHandle === handle) return false;
+		if (_.#stack.some((frame) => frame.handle === handle)) return _.#popTo(handle);
 		if (!_.#emit("push", {
 			fromHandle,
 			toHandle: handle,
@@ -152,8 +156,8 @@ var PanelStack = class extends HTMLElement {
 		_.#setPanelState(rootPanel, "current");
 		_.#focus();
 		for (const [handle, panel] of _.#panels) if (handle !== root.handle) _.#setPanelState(panel, "next");
-		_.#reflect();
 		_.#emit("reset", { rootHandle: root.handle });
+		_.#reflect();
 	}
 	/** Read-only: handle of the panel currently on top of the stack. */
 	get currentHandle() {
@@ -211,6 +215,7 @@ var PanelStack = class extends HTMLElement {
 		const currentHandle = _.currentHandle;
 		for (const [handle, panel] of _.#panels) if (handle === currentHandle) _.#setPanelState(panel, "current");
 		else _.#setPanelState(panel, handle === rootHandle ? "previous" : "next");
+		_.#lastChange = currentHandle;
 		_.#reflect();
 	}
 	/**
@@ -222,10 +227,31 @@ var PanelStack = class extends HTMLElement {
 	#reflect() {
 		const _ = this;
 		const handle = _.currentHandle;
-		if (handle == null || _.getAttribute("current") === handle) return;
-		_.#reflecting = true;
-		_.setAttribute("current", handle);
-		_.#reflecting = false;
+		if (handle == null) return;
+		if (_.getAttribute("current") !== handle) {
+			_.#reflecting = true;
+			try {
+				_.setAttribute("current", handle);
+			} finally {
+				_.#reflecting = false;
+			}
+		}
+		if (handle !== _.#lastChange) {
+			_.#lastChange = handle;
+			_.#emit("change", { handle });
+		}
+	}
+	/**
+	* Pop until `handle` is current. One panel-stack:pop per level.
+	* @param {string} handle — a handle already in the stack
+	* @returns {boolean} true if the stack ended up there
+	*/
+	#popTo(handle) {
+		const _ = this;
+		const index = _.#stack.findIndex((frame) => frame.handle === handle);
+		if (index === -1) return false;
+		while (_.#stack.length - 1 > index) if (!_.pop()) break;
+		return _.currentHandle === handle;
 	}
 	/**
 	* Resolve a requested `current` value against the stack:
@@ -242,9 +268,8 @@ var PanelStack = class extends HTMLElement {
 		if (!_.#panels.has(handle)) _.#rescan(false);
 		if (!_.#panels.has(handle)) return _.#reflect();
 		if (handle === _.#stack[0]?.handle) return _.reset();
-		const index = _.#stack.findIndex((frame) => frame.handle === handle);
-		if (index !== -1) {
-			while (_.#stack.length - 1 > index) if (!_.pop()) break;
+		if (_.#stack.some((frame) => frame.handle === handle)) {
+			_.#popTo(handle);
 			return;
 		}
 		if (!_.push(handle)) _.#reflect();
@@ -261,24 +286,18 @@ var PanelStack = class extends HTMLElement {
 		const _ = this;
 		const before = _.currentHandle;
 		_.#queryDOM();
-		for (const [handle, panel] of _.#panels) if (!panel.hasAttribute("state")) _.#setPanelState(panel, handle === before ? "current" : "next");
-		const survivors = _.#stack.filter((frame) => _.#panels.has(frame.handle));
-		if (survivors.length === _.#stack.length) {
-			if (reflect) _.#reflect();
-			return;
-		}
-		_.#stack = survivors;
+		_.#stack = _.#stack.filter((frame) => _.#panels.has(frame.handle));
 		if (_.#stack.length === 0 && _.#panels.size > 0) _.#stack = [{
 			handle: _.#panels.keys().next().value,
 			trigger: null
 		}];
 		const currentHandle = _.currentHandle;
+		const inStack = new Set(_.#stack.map((frame) => frame.handle));
 		if (currentHandle !== before) {
-			const inStack = new Set(_.#stack.map((frame) => frame.handle));
 			_.#setPanelState(_.#panels.get(currentHandle), "current");
 			for (const [handle, panel] of _.#panels) if (handle !== currentHandle) _.#setPanelState(panel, inStack.has(handle) ? "previous" : "next");
 			_.#focus();
-		}
+		} else for (const [handle, panel] of _.#panels) if (!inStack.has(handle) && panel.getAttribute("state") !== "next") _.#setPanelState(panel, "next");
 		if (reflect) _.#reflect();
 	}
 	#attachListeners() {

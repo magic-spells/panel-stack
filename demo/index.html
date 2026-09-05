@@ -970,7 +970,7 @@
 		<div class="install-specs">
 			<div class="install-item">
 				<span class="install-label">JS (gzip)</span>
-				<span class="install-size">1.86 KB</span>
+				<span class="install-size">1.93 KB</span>
 			</div>
 			<div class="install-item">
 				<span class="install-label">CSS (gzip)</span>
@@ -1825,6 +1825,8 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 					own — push, pop back through the ancestry, or reset to root. It writes the attribute
 					back after every navigation, including the ones you didn't start, so the value on the
 					element is always the truth. Unknown handles and cancelled pushes are restored.
+					<code>panel-stack:change</code> fires once the stack has settled — that's the one to
+					sync parent state from, since push and pop fire <em>before</em> the move.
 				</p>
 				<div class="demo-stage">
 					<div class="ps-frame ps-frame--tall">
@@ -1917,7 +1919,10 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 stack.current = <span class="hl-val">'ctl-dresses'</span>; <span class="hl-cm">// two levels down → pushes</span>
 stack.current = <span class="hl-val">'ctl-shop'</span>;    <span class="hl-cm">// an ancestor → one pop per level</span>
 stack.current = <span class="hl-val">'ctl-root'</span>;    <span class="hl-cm">// the root → reset()</span>
-stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">// unknown → ignored, attribute restored</span></div>
+stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">// unknown → ignored, attribute restored</span>
+
+<span class="hl-cm">// sync back — fires after the stack settles, for every source</span>
+stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-stack:change'</span>, (e) =&gt; setState(e.detail.handle));</div>
 			</section>
 
 			<!-- ---- 07 Reference ---- -->
@@ -2003,6 +2008,9 @@ stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">/
 					</div>
 					<div class="ref-row">
 						<div><code>panel-stack:reset</code></div><div>—</div><div><code>{ rootHandle }</code></div>
+					</div>
+					<div class="ref-row">
+						<div><code>panel-stack:change</code></div><div>—</div><div><code>{ handle }</code> · fires after the stack settles</div>
 					</div>
 				</div>
 
@@ -2212,14 +2220,20 @@ stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">/
 
 			for (const type of ['panel-stack:push', 'panel-stack:pop', 'panel-stack:reset']) {
 				ctlStack.addEventListener(type, (e) => {
-					// Read the attribute in the next task — push fires *before* the
-					// stack mutates, so the reflected value isn't written yet.
-					setTimeout(ctlSync);
 					ctlLine(
 						`<span class="hl-tag">${e.type}</span> <span class="hl-val">${JSON.stringify(e.detail)}</span>`
 					);
 				});
 			}
+
+			// panel-stack:change fires after the stack settles — the one event to
+			// sync parent state from.
+			ctlStack.addEventListener('panel-stack:change', (e) => {
+				ctlSync();
+				ctlLine(
+					`<span class="hl-tag">panel-stack:change</span> <span class="hl-val">${JSON.stringify(e.detail)}</span>`
+				);
+			});
 
 			// Cancel every push to the vault — the attribute gets restored.
 			ctlStack.addEventListener('panel-stack:push', (e) => {
@@ -2234,7 +2248,6 @@ stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">/
 					const handle = btn.getAttribute('data-ctl');
 					ctlLine(`<span class="hl-cm">// stack.current = </span><span class="hl-val">'${handle}'</span>`);
 					ctlStack.current = handle;
-					ctlSync();
 				});
 			});
 
@@ -2246,7 +2259,6 @@ stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">/
 				ctlStack.appendChild(panel);
 				ctlLine(`<span class="hl-cm">// appended </span><span class="hl-val">'${handle}'</span><span class="hl-cm">, pushing to it</span>`);
 				ctlStack.current = handle;
-				ctlSync();
 			});
 
 			document.getElementById('ctl-clear-log').addEventListener('click', () => {

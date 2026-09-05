@@ -4,7 +4,7 @@ A nested-panel stack web component with fluid push/pop transitions. Built for mo
 
 🔍 **[Live Demo](https://magic-spells.github.io/panel-stack/demo/)** — See it in action!
 
-- **1.86 KB JS gzip**, 0.79 KB CSS gzip, zero dependencies
+- **1.93 KB JS gzip**, 0.79 KB CSS gzip, zero dependencies
 - Two custom elements: `<panel-stack>` + `<stack-panel>`
 - Honors `prefers-reduced-motion`
 - `inert` on hidden panels — focus stays where it should
@@ -87,6 +87,8 @@ What a new value does:
 | the root panel | `reset()` → one `panel-stack:reset` |
 | a previous panel (in the current ancestry) | pops back to it — **one `panel-stack:pop` per level** |
 | any other known panel | `push(handle)` → one cancelable `panel-stack:push` |
+
+Every one of those (bar the no-op) ends with a `panel-stack:change` carrying the settled handle. A multi-level pop-back is genuinely one navigation per level — a pop and a change each — and the intermediate panel animates through on its way, the same way `reset()` has always behaved. `push(handle)` follows the same rules — pushing a panel already in the ancestry pops back to it rather than duplicating the frame.
 | unknown | ignored, and the attribute is restored to the real current handle |
 
 A `panel-stack:push` that a listener cancels with `preventDefault()` also restores the
@@ -109,10 +111,13 @@ Controlled from a parent framework:
 stack.current = state.panel;
 
 // stack → parent (every source, including Escape and back buttons)
-for (const type of ['panel-stack:push', 'panel-stack:pop', 'panel-stack:reset']) {
-  stack.addEventListener(type, () => setState({ panel: stack.current }));
-}
+stack.addEventListener('panel-stack:change', (e) => setState({ panel: e.detail.handle }));
 ```
+
+`panel-stack:change` fires **after** the stack settles — unlike `push` and `pop`, which
+fire before it moves. Read `stack.current` inside a `push`/`pop` listener and you get the
+*old* handle; a parent that writes that back on the next render snaps the panel back. Use
+`panel-stack:change`, or `e.detail.toHandle` / `e.detail.rootHandle`.
 
 ## Panels added or removed at runtime
 
@@ -134,7 +139,8 @@ DOM correction, not a navigation, so no `push`/`pop` event fires for it.
 
 ## Events
 
-All events bubble + composed. `panel-stack:push` is cancelable.
+All events bubble + composed. `panel-stack:push` is cancelable. `push`, `pop` and `reset`
+fire **before** the stack mutates; `change` fires **after** it settles.
 
 ```js
 stack.addEventListener('panel-stack:push', (e) => {
@@ -143,6 +149,12 @@ stack.addEventListener('panel-stack:push', (e) => {
 
 stack.addEventListener('panel-stack:pop', (e) => { /* { fromHandle, toHandle } */ });
 stack.addEventListener('panel-stack:reset', (e) => { /* { rootHandle } */ });
+
+// panel-stack:change fires last, after the stack has settled — one event for
+// every navigation, whatever caused it. This is the one to sync state from.
+stack.addEventListener('panel-stack:change', (e) => {
+  console.log(e.detail); // { handle: 'shop' }
+});
 
 // Cancel a push:
 stack.addEventListener('panel-stack:push', (e) => {
