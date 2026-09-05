@@ -4,7 +4,7 @@ A nested-panel stack web component with fluid push/pop transitions. Built for mo
 
 🔍 **[Live Demo](https://magic-spells.github.io/panel-stack/demo/)** — See it in action!
 
-- **1.27 KB JS gzip**, 0.77 KB CSS gzip, zero dependencies
+- **1.86 KB JS gzip**, 0.79 KB CSS gzip, zero dependencies
 - Two custom elements: `<panel-stack>` + `<stack-panel>`
 - Honors `prefers-reduced-motion`
 - `inert` on hidden panels — focus stays where it should
@@ -57,10 +57,80 @@ stack.push('shop', triggerEl);   // optional 2nd arg — pop() restores focus to
 stack.pop();                     // back one level
 stack.reset();                   // collapse to root
 
-stack.currentHandle;   // 'shop'
-stack.currentPanel;    // <stack-panel handle="shop">
-stack.depth;           // 2
+stack.current = 'shop';  // navigate — same semantics as the `current` attribute
+stack.current;           // 'shop'
+stack.currentHandle;     // 'shop' (unchanged alias, kept for back-compat)
+stack.currentPanel;      // <stack-panel handle="shop">
+stack.depth;             // 2
 ```
+
+## Controlled mode — the `current` attribute
+
+`current` is the handle of the panel that should be current. Set it and the stack
+navigates itself; the component writes it back after **every** navigation, whatever
+the source (`push()`, `pop()`, `reset()`, a declarative trigger, the Escape key). So
+the attribute is always safe to read, and a framework that renders it stays in sync.
+
+```html
+<panel-stack current="shop"> … </panel-stack>
+```
+
+```js
+stack.setAttribute('current', 'shop-women'); // or: stack.current = 'shop-women'
+```
+
+What a new value does:
+
+| The new handle is… | What happens |
+| --- | --- |
+| already current | nothing — no navigation, no event |
+| the root panel | `reset()` → one `panel-stack:reset` |
+| a previous panel (in the current ancestry) | pops back to it — **one `panel-stack:pop` per level** |
+| any other known panel | `push(handle)` → one cancelable `panel-stack:push` |
+| unknown | ignored, and the attribute is restored to the real current handle |
+
+A `panel-stack:push` that a listener cancels with `preventDefault()` also restores the
+attribute, so an optimistic parent sees its value undone rather than silently diverging.
+Removing the attribute doesn't navigate — it's written straight back.
+
+**At first connect**, an authored `current` starts the stack on that panel with **no
+events**. The panel named by `initial` (or the first child) stays underneath it as the
+root, so `pop()` and Escape still go back:
+
+```html
+<!-- opens on `shop`, one level deep; Back returns to `root` -->
+<panel-stack initial="root" current="shop"> … </panel-stack>
+```
+
+Controlled from a parent framework:
+
+```js
+// parent → stack
+stack.current = state.panel;
+
+// stack → parent (every source, including Escape and back buttons)
+for (const type of ['panel-stack:push', 'panel-stack:pop', 'panel-stack:reset']) {
+  stack.addEventListener(type, () => setState({ panel: stack.current }));
+}
+```
+
+## Panels added or removed at runtime
+
+`<stack-panel>` children are re-indexed when they change — a `MutationObserver` watches
+the child list, and `push()` also re-scans on demand, so a panel appended one line earlier
+is pushable immediately:
+
+```js
+stack.appendChild(newPanel);   // <stack-panel handle="new">
+stack.current = 'new';         // works — no waiting
+```
+
+A new panel is parked off-screen (`state="next"`, `inert`) until something pushes it.
+
+Removing a panel that's in the current ancestry drops its frame from the stack and falls
+back to the **nearest surviving ancestor** — if the current panel itself is removed, that
+ancestor becomes current, the attribute reflects it, and focus moves into it. This is a
+DOM correction, not a navigation, so no `push`/`pop` event fires for it.
 
 ## Events
 
