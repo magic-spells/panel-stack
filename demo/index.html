@@ -970,7 +970,7 @@
 		<div class="install-specs">
 			<div class="install-item">
 				<span class="install-label">JS (gzip)</span>
-				<span class="install-size">1.25 KB</span>
+				<span class="install-size">1.93 KB</span>
 			</div>
 			<div class="install-item">
 				<span class="install-label">CSS (gzip)</span>
@@ -1817,7 +1817,115 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 })</div>
 			</section>
 
-			<!-- ---- 06 Reference ---- -->
+			<!-- ---- 06 Controlled ---- -->
+			<section class="demo-section" id="demo-controlled">
+				<h2>Or let the <em>parent</em> drive.</h2>
+				<p class="demo-desc">
+					Set <code>current</code> to the handle you want and the stack works out the move on its
+					own — push, pop back through the ancestry, or reset to root. It writes the attribute
+					back after every navigation, including the ones you didn't start, so the value on the
+					element is always the truth. Unknown handles and cancelled pushes are restored.
+					<code>panel-stack:change</code> fires once the stack has settled — that's the one to
+					sync parent state from, since push and pop fire <em>before</em> the move.
+				</p>
+				<div class="demo-stage">
+					<div class="ps-frame ps-frame--tall">
+						<panel-stack initial="ctl-root" id="ctl-stack" effect="stack">
+							<stack-panel handle="ctl-root">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<span class="ps-panel__header-spacer"></span>
+										<span class="ps-panel__title">Controlled</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="ctl-shop" data-stack-focus><span class="ps-row__label">Shop</span><svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+										<button class="ps-row" type="button" data-action-stack-push target="ctl-vault"><span class="ps-row__label">Vault</span><svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="ctl-shop">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+										<span class="ps-panel__title">Shop</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="ctl-women"><span class="ps-row__label">Women</span><svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="ctl-women">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+										<span class="ps-panel__title">Women</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<button class="ps-row" type="button" data-action-stack-push target="ctl-dresses"><span class="ps-row__label">Dresses</span><svg class="ps-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="ctl-dresses">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+										<span class="ps-panel__title">Dresses</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Bottom of the tree.</span></div>
+									</div>
+								</div>
+							</stack-panel>
+							<stack-panel handle="ctl-vault">
+								<div class="ps-panel">
+									<div class="ps-panel__header">
+										<button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+										<span class="ps-panel__title">Vault</span>
+										<span class="ps-panel__header-spacer"></span>
+									</div>
+									<div class="ps-panel__body">
+										<div class="ps-row"><span class="ps-row__label">Pushes here are cancelled — you should never see this.</span></div>
+									</div>
+								</div>
+							</stack-panel>
+						</panel-stack>
+					</div>
+					<div class="event-log" id="ctl-log">
+						<span class="event-log__line event-log__empty">// waiting for events…</span>
+					</div>
+				</div>
+				<div class="controls" style="flex-direction: column; align-items: flex-start;">
+					<code class="install-value" id="ctl-readout">current="ctl-root"</code>
+					<div class="controls">
+						<button class="btn" data-ctl="ctl-root">root</button>
+						<button class="btn" data-ctl="ctl-shop">shop</button>
+						<button class="btn" data-ctl="ctl-women">women</button>
+						<button class="btn" data-ctl="ctl-dresses">dresses</button>
+						<button class="btn" data-ctl="ctl-vault">vault (cancelled)</button>
+						<button class="btn" data-ctl="ctl-nope">nope (unknown)</button>
+					</div>
+					<div class="controls">
+						<button class="btn" id="ctl-add">Add a panel at runtime</button>
+						<button class="btn" id="ctl-clear-log">Clear log</button>
+					</div>
+				</div>
+				<div class="code-block"><span class="hl-cm">&lt;!-- controlled: the attribute is the input AND the output --&gt;</span>
+&lt;<span class="hl-tag">panel-stack</span> <span class="hl-attr">initial</span>=<span class="hl-val">"ctl-root"</span> <span class="hl-attr">current</span>=<span class="hl-val">"ctl-shop"</span>&gt; … &lt;/<span class="hl-tag">panel-stack</span>&gt;
+
+stack.current = <span class="hl-val">'ctl-dresses'</span>; <span class="hl-cm">// two levels down → pushes</span>
+stack.current = <span class="hl-val">'ctl-shop'</span>;    <span class="hl-cm">// an ancestor → one pop per level</span>
+stack.current = <span class="hl-val">'ctl-root'</span>;    <span class="hl-cm">// the root → reset()</span>
+stack.current = <span class="hl-val">'nope'</span>;        <span class="hl-cm">// unknown → ignored, attribute restored</span>
+
+<span class="hl-cm">// sync back — fires after the stack settles, for every source</span>
+stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-stack:change'</span>, (e) =&gt; setState(e.detail.handle));</div>
+			</section>
+
+			<!-- ---- 07 Reference ---- -->
 			<section class="demo-section" id="demo-reference">
 				<h2>The whole API, on one screen.</h2>
 				<p class="demo-desc">
@@ -1835,6 +1943,9 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 					</div>
 					<div class="ref-row">
 						<div><code>initial</code></div><div>panel-stack</div><div>Handle of the panel to start on (default: first child)</div>
+					</div>
+					<div class="ref-row">
+						<div><code>current</code></div><div>panel-stack</div><div>Controlled · handle that should be current. Write it to navigate; the component writes it back after every push / pop / reset</div>
 					</div>
 					<div class="ref-row">
 						<div><code>&lt;stack-panel&gt;</code></div><div>—</div><div>One panel in the stack</div>
@@ -1871,6 +1982,9 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 						<div><code>reset()</code></div><div>void</div><div>Collapse the stack to root</div>
 					</div>
 					<div class="ref-row">
+						<div><code>current</code></div><div>string</div><div>Get / set · reads the current handle, writing it navigates (same as the attribute)</div>
+					</div>
+					<div class="ref-row">
 						<div><code>currentHandle</code></div><div>string</div><div>Read-only · top of the stack</div>
 					</div>
 					<div class="ref-row">
@@ -1894,6 +2008,9 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 					</div>
 					<div class="ref-row">
 						<div><code>panel-stack:reset</code></div><div>—</div><div><code>{ rootHandle }</code></div>
+					</div>
+					<div class="ref-row">
+						<div><code>panel-stack:change</code></div><div>—</div><div><code>{ handle }</code> · fires after the stack settles</div>
 					</div>
 				</div>
 
@@ -2079,6 +2196,76 @@ stack.<span class="hl-tag">addEventListener</span>(<span class="hl-val">'panel-s
 			evtStack.addEventListener('panel-stack:reset', (e) =>
 				logEvent('panel-stack:reset', e.detail)
 			);
+
+			// ---- Demo 6: controlled via the current attribute ----
+			const ctlStack = document.getElementById('ctl-stack');
+			const ctlLog = document.getElementById('ctl-log');
+			const ctlReadout = document.getElementById('ctl-readout');
+
+			const ctlLine = (html) => {
+				const empty = ctlLog.querySelector('.event-log__empty');
+				if (empty) empty.remove();
+				const line = document.createElement('span');
+				line.className = 'event-log__line';
+				line.innerHTML = html;
+				ctlLog.appendChild(line);
+				ctlLog.scrollTop = ctlLog.scrollHeight;
+				const lines = ctlLog.querySelectorAll('.event-log__line');
+				if (lines.length > 50) lines[0].remove();
+			};
+
+			const ctlSync = () => {
+				ctlReadout.textContent = `current="${ctlStack.current}"`;
+			};
+
+			for (const type of ['panel-stack:push', 'panel-stack:pop', 'panel-stack:reset']) {
+				ctlStack.addEventListener(type, (e) => {
+					ctlLine(
+						`<span class="hl-tag">${e.type}</span> <span class="hl-val">${JSON.stringify(e.detail)}</span>`
+					);
+				});
+			}
+
+			// panel-stack:change fires after the stack settles — the one event to
+			// sync parent state from.
+			ctlStack.addEventListener('panel-stack:change', (e) => {
+				ctlSync();
+				ctlLine(
+					`<span class="hl-tag">panel-stack:change</span> <span class="hl-val">${JSON.stringify(e.detail)}</span>`
+				);
+			});
+
+			// Cancel every push to the vault — the attribute gets restored.
+			ctlStack.addEventListener('panel-stack:push', (e) => {
+				if (e.detail.toHandle === 'ctl-vault') {
+					e.preventDefault();
+					ctlLine('<span class="hl-cm">// push cancelled — attribute restored</span>');
+				}
+			});
+
+			document.querySelectorAll('[data-ctl]').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const handle = btn.getAttribute('data-ctl');
+					ctlLine(`<span class="hl-cm">// stack.current = </span><span class="hl-val">'${handle}'</span>`);
+					ctlStack.current = handle;
+				});
+			});
+
+			document.getElementById('ctl-add').addEventListener('click', () => {
+				const handle = `ctl-new-${ctlStack.querySelectorAll('stack-panel').length}`;
+				const panel = document.createElement('stack-panel');
+				panel.setAttribute('handle', handle);
+				panel.innerHTML = `<div class="ps-panel"><div class="ps-panel__header"><button class="ps-panel__back" type="button" data-action-stack-pop aria-label="Back" data-stack-focus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="ps-panel__title">${handle}</span><span class="ps-panel__header-spacer"></span></div><div class="ps-panel__body"><div class="ps-row"><span class="ps-row__label">Added after mount.</span></div></div></div>`;
+				ctlStack.appendChild(panel);
+				ctlLine(`<span class="hl-cm">// appended </span><span class="hl-val">'${handle}'</span><span class="hl-cm">, pushing to it</span>`);
+				ctlStack.current = handle;
+			});
+
+			document.getElementById('ctl-clear-log').addEventListener('click', () => {
+				ctlLog.innerHTML = '<span class="event-log__line event-log__empty">// log cleared</span>';
+			});
+
+			ctlSync();
 
 			document.getElementById('evt-reset').addEventListener('click', () => evtStack.reset());
 			document.getElementById('evt-clear-log').addEventListener('click', () => {
