@@ -1,4 +1,6 @@
 export class PanelStack extends HTMLElement {
+	/** Handle of the current panel. Setting it navigates, like the `current` attribute. */
+	current: string | null;
 	readonly currentHandle: string | null;
 	readonly currentPanel: StackPanel | null;
 	readonly depth: number;
@@ -28,6 +30,9 @@ declare global {
 		}>;
 		'panel-stack:reset': CustomEvent<{
 			rootHandle: string;
+		}>;
+		'panel-stack:change': CustomEvent<{
+			handle: string;
 		}>;
 	}
 }

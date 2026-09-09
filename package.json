@@ -1,6 +1,6 @@
 {
 	"name": "@magic-spells/panel-stack",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "A nested-panel stack web component with fluid push/pop transitions — drill-down menus, settings flows, multi-step wizards.",
 	"author": "Cory Schulz",
 	"license": "MIT",
